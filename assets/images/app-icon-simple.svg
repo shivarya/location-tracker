@@ -1,0 +1,37 @@
+<svg width="432" height="432" viewBox="0 0 432 432" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Modern Adaptive Icon Design -->
+  <defs>
+    <linearGradient id="pinGrad" x1="216" y1="50" x2="216" y2="382" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" style="stop-color:#00E5FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0091EA;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Location Pin (Bold, Clean) -->
+  <path d="M 216 50 C 150 50 96 104 96 170 C 96 260 216 382 216 382 C 216 382 336 260 336 170 C 336 104 282 50 216 50 Z" 
+        fill="url(#pinGrad)"/>
+  
+  <!-- Inner Circle (Dark) -->
+  <circle cx="216" cy="170" r="60" fill="#0A1929"/>
+  
+  <!-- Speedometer Arc -->
+  <path d="M 176 170 A 40 40 0 0 1 256 170" 
+        stroke="#00E5FF" 
+        stroke-width="6" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <!-- Tick Marks -->
+  <line x1="178" y1="173" x2="184" y2="179" stroke="#00D4FF" stroke-width="3" stroke-linecap="round"/>
+  <line x1="216" y1="132" x2="216" y2="142" stroke="#00D4FF" stroke-width="3" stroke-linecap="round"/>
+  <line x1="254" y1="173" x2="248" y2="179" stroke="#00D4FF" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Needle -->
+  <line x1="216" y1="170" x2="241" y2="152" 
+        stroke="#FFFFFF" 
+        stroke-width="5" 
+        stroke-linecap="round"/>
+  
+  <!-- Center Dot -->
+  <circle cx="216" cy="170" r="6" fill="#FFFFFF"/>
+</svg>

@@ -1,0 +1,108 @@
+# Node/npm
+node_modules/
+npm-debug.log
+npm-debug.log.*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Expo
+.expo/
+.expo-shared/
+dist/
+build/
+web-build/
+expo-env.d.ts
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# Android
+android/app/debug
+android/app/release
+android/.gradle
+android/local.properties
+android/build/
+android/.project
+android/.classpath
+android/*.iml
+*.apk
+*.aab
+
+# iOS
+ios/Pods
+ios/Podfile.lock
+ios/build/
+ios/.xcode.env
+*.xcworkspace
+*.xcuserdata
+
+# Metro
+.metro-health-check*
+
+# macOS
+.DS_Store
+*.swp
+*.swo
+*~
+*.pem
+
+# IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+.project
+.settings/
+.classpath
+*.iml
+
+# OS files
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# TypeScript
+*.tsbuildinfo
+
+# Kotlin
+.kotlin/
+
+# Testing
+coverage/
+.nyc_output/
+jest-coverage/
+
+# Build output
+out/
+.next/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
+
+# Generated native folders
+/ios
+/android
+
+# App example
+app-example
+
