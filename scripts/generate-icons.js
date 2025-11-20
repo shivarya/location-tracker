@@ -142,16 +142,38 @@ async function convertSvgToPng(svgPath, outputPath, width, height = null) {
 }
 
 /**
- * Generate app icon (512x512)
+ * Generate app icon (512x512) with transparent background and safe area
  */
 async function generateAppIcon() {
     console.log('📱 Generating App Icon...');
     
+    const tempPath = path.join(OUTPUT_DIR, 'temp-icon.png');
     const outputPath = path.join(OUTPUT_DIR, 'icon-512.png');
-    const success = await convertSvgToPng(SVG_LOGO, outputPath, 512);
+    
+    // Convert SVG to PNG at larger size (for better quality)
+    const success = await convertSvgToPng(SVG_ICON_SIMPLE, tempPath, 800);
     
     if (success) {
-        console.log(`   ✅ Created: ${ICON_SPECS.appIcon.output} (512x512)`);
+        // Resize and add padding to prevent truncation (80% of original size, centered)
+        await sharp(tempPath)
+            .resize(410, 410, { // 80% of 512 = 410
+                fit: 'contain',
+                background: { r: 0, g: 0, b: 0, alpha: 0 } // Transparent
+            })
+            .extend({
+                top: 51,
+                bottom: 51,
+                left: 51,
+                right: 51,
+                background: { r: 0, g: 0, b: 0, alpha: 0 } // Transparent padding
+            })
+            .png()
+            .toFile(outputPath);
+        
+        // Clean up temp file
+        fs.unlinkSync(tempPath);
+        
+        console.log(`   ✅ Created: ${ICON_SPECS.appIcon.output} (512x512 with transparent background)`);
         
         // Copy to assets folder
         const assetsPath = path.join(ASSETS_DIR, 'icon.png');
@@ -163,45 +185,78 @@ async function generateAppIcon() {
 }
 
 /**
- * Generate adaptive icons
+ * Generate adaptive icons with transparent backgrounds and safe area
  */
 async function generateAdaptiveIcons() {
     console.log('\n📐 Generating Adaptive Icons...');
     
-    // Foreground (use simple icon)
+    // Foreground (use simple icon with padding to prevent truncation)
+    const tempForeground = path.join(OUTPUT_DIR, 'temp-foreground.png');
     const foregroundPath = path.join(OUTPUT_DIR, 'android-icon-foreground.png');
-    let success = await convertSvgToPng(SVG_ICON_SIMPLE, foregroundPath, 512);
+    let success = await convertSvgToPng(SVG_ICON_SIMPLE, tempForeground, 640);
+    
     if (success) {
-        console.log('   ✅ Foreground icon (512x512)');
+        // Resize to 70% and center with transparent background (safe area for adaptive icons)
+        await sharp(tempForeground)
+            .resize(358, 358, { // 70% of 512
+                fit: 'contain',
+                background: { r: 0, g: 0, b: 0, alpha: 0 }
+            })
+            .extend({
+                top: 77,
+                bottom: 77,
+                left: 77,
+                right: 77,
+                background: { r: 0, g: 0, b: 0, alpha: 0 }
+            })
+            .png()
+            .toFile(foregroundPath);
+        
+        fs.unlinkSync(tempForeground);
+        console.log('   ✅ Foreground icon (512x512 with transparent background)');
         fs.copyFileSync(foregroundPath, path.join(ASSETS_DIR, 'android-icon-foreground.png'));
     }
     
-    // Background (solid color)
-    const backgroundColor = '#0A1929'; // Dark blue from app theme
+    // Background (transparent)
     const backgroundPath = path.join(OUTPUT_DIR, 'android-icon-background.png');
     await sharp({
         create: {
             width: 512,
             height: 512,
             channels: 4,
-            background: backgroundColor
+            background: { r: 0, g: 0, b: 0, alpha: 0 } // Fully transparent
         }
     })
     .png()
     .toFile(backgroundPath);
-    console.log('   ✅ Background icon (512x512)');
+    console.log('   ✅ Background icon (512x512 transparent)');
     fs.copyFileSync(backgroundPath, path.join(ASSETS_DIR, 'android-icon-background.png'));
     
     // Monochrome (for Android 13+)
+    const tempMonochrome = path.join(OUTPUT_DIR, 'temp-monochrome.png');
     const monochromePath = path.join(OUTPUT_DIR, 'android-icon-monochrome.png');
-    success = await convertSvgToPng(SVG_ICON_SIMPLE, monochromePath, 512);
+    success = await convertSvgToPng(SVG_ICON_SIMPLE, tempMonochrome, 640);
+    
     if (success) {
-        // Convert to grayscale
-        await sharp(monochromePath)
+        // Convert to white on transparent and add safe area
+        await sharp(tempMonochrome)
             .greyscale()
-            .toFile(monochromePath + '.tmp');
-        fs.renameSync(monochromePath + '.tmp', monochromePath);
-        console.log('   ✅ Monochrome icon (512x512)');
+            .resize(358, 358, {
+                fit: 'contain',
+                background: { r: 0, g: 0, b: 0, alpha: 0 }
+            })
+            .extend({
+                top: 77,
+                bottom: 77,
+                left: 77,
+                right: 77,
+                background: { r: 0, g: 0, b: 0, alpha: 0 }
+            })
+            .png()
+            .toFile(monochromePath);
+        
+        fs.unlinkSync(tempMonochrome);
+        console.log('   ✅ Monochrome icon (512x512 transparent)');
         fs.copyFileSync(monochromePath, path.join(ASSETS_DIR, 'android-icon-monochrome.png'));
     }
 }
@@ -235,7 +290,7 @@ async function generateFeatureGraphic() {
 }
 
 /**
- * Generate launcher icons (various sizes)
+ * Generate launcher icons (various sizes) with transparent backgrounds
  */
 async function generateLauncherIcons() {
     console.log('\n🚀 Generating Launcher Icons...');
@@ -243,10 +298,30 @@ async function generateLauncherIcons() {
     const sizes = [48, 72, 96, 144, 192, 512];
     
     for (const size of sizes) {
+        const tempPath = path.join(OUTPUT_DIR, `temp-launcher-${size}.png`);
         const outputPath = path.join(OUTPUT_DIR, `launcher-icon-${size}.png`);
-        const success = await convertSvgToPng(SVG_LOGO, outputPath, size);
+        const innerSize = Math.floor(size * 0.8); // 80% of target size
+        const padding = Math.floor((size - innerSize) / 2);
+        
+        const success = await convertSvgToPng(SVG_ICON_SIMPLE, tempPath, innerSize * 1.5);
         if (success) {
-            console.log(`   ✅ ${size}x${size}`);
+            await sharp(tempPath)
+                .resize(innerSize, innerSize, {
+                    fit: 'contain',
+                    background: { r: 0, g: 0, b: 0, alpha: 0 }
+                })
+                .extend({
+                    top: padding,
+                    bottom: padding,
+                    left: padding,
+                    right: padding,
+                    background: { r: 0, g: 0, b: 0, alpha: 0 }
+                })
+                .png()
+                .toFile(outputPath);
+            
+            fs.unlinkSync(tempPath);
+            console.log(`   ✅ ${size}x${size} (transparent background)`);
         }
     }
 }
