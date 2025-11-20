@@ -44,6 +44,8 @@ android/.classpath
 android/*.iml
 *.apk
 *.aab
+*.keystore
+android/keystore-info.txt
 
 # iOS
 ios/Pods
