@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Location & Speed Tracker - Real-time GPS tracking app with live speed monitoring, route recording, and comprehensive session analytics.">
+    <meta name="keywords" content="GPS tracker, speed tracker, location tracker, Android app, fitness tracking">
+    <meta name="author" content="Shivarya">
+    <title>Location & Speed Tracker - GPS Tracking App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <svg class="logo" viewBox="0 0 50 50" width="40" height="40">
+                    <path d="M 25 5 C 18 5 12 11 12 18 C 12 28 25 45 25 45 C 25 45 38 28 38 18 C 38 11 32 5 25 5 Z" fill="#00D4FF"/>
+                    <circle cx="25" cy="18" r="5" fill="#0A1929"/>
+                </svg>
+                <span class="brand-name">Location & Speed Tracker</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#download">Download</a></li>
+                <li><a href="#privacy">Privacy</a></li>
+                <li><a href="#support">Support</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Track Your Journey with Precision</h1>
+                <p class="hero-subtitle">Real-time GPS tracking with live speed monitoring and comprehensive session analytics</p>
+                <div class="hero-buttons">
+                    <a href="#download" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.6,9.2l-5-5C12.2,3.8,11.6,4.1,11.6,4.7V9c-5,0-8.4,1.6-10.4,4.6c-0.6,0.9-0.9,2-1,3.1c-0.1,1.1,0.1,2.3,0.6,3.3c0.5,1,1.4,1.8,2.4,2.2c1,0.4,2.2,0.5,3.2,0.2c0,0,0,0,0.1,0c0.1-0.1,0.2-0.1,0.2-0.2c0-0.1,0-0.2-0.1-0.3C5.3,20.3,4,18.1,4,15.5C4,12,6.4,10,11.6,10v4.3c0,0.6,0.6,0.9,1,0.6l5-5C17.9,9.6,17.9,9.5,17.6,9.2z"/>
+                        </svg>
+                        Download on Google Play
+                    </a>
+                    <a href="https://github.com/shivarya/location-tracker" class="btn btn-secondary" target="_blank">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"/>
+                        </svg>
+                        View on GitHub
+                    </a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div class="app-preview">
+                            <div class="speed-display">85<span>km/h</span></div>
+                            <div class="location-info">
+                                <p>📍 40.7128° N, 74.0060° W</p>
+                                <p>⛰️ 45m altitude</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Powerful Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📍</div>
+                    <h3>Real-Time Tracking</h3>
+                    <p>Live GPS tracking with precise coordinates, altitude, and heading information updated every second.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Speed Monitoring</h3>
+                    <p>Monitor your speed in real-time with support for both metric (km/h) and imperial (mph) units.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Session Analytics</h3>
+                    <p>Comprehensive statistics including distance, average/max/min speed, and duration for every session.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3>Session History</h3>
+                    <p>Save unlimited tracking sessions with detailed history and the ability to review past activities.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📤</div>
+                    <h3>Data Export</h3>
+                    <p>Export your sessions as JSON or CSV files for analysis, backup, or sharing.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌙</div>
+                    <h3>Dark Theme</h3>
+                    <p>Modern, eye-friendly dark interface with cyan accents for comfortable viewing in any lighting.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section class="screenshots">
+        <div class="container">
+            <h2 class="section-title">See It In Action</h2>
+            <div class="screenshot-carousel">
+                <div class="screenshot-item">
+                    <div class="screenshot-placeholder">
+                        <p>🏠 Home Screen</p>
+                        <span>Start tracking with one tap</span>
+                    </div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="screenshot-placeholder">
+                        <p>📈 Live Tracking</p>
+                        <span>Real-time stats & monitoring</span>
+                    </div>
+                </div>
+                <div class="screenshot-item">
+                    <div class="screenshot-placeholder">
+                        <p>📜 History</p>
+                        <span>View all past sessions</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download">
+        <div class="container">
+            <h2 class="section-title">Get Started Today</h2>
+            <p class="section-subtitle">Available for Android devices</p>
+            <div class="download-buttons">
+                <a href="#" class="store-button">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.5,12.92 20.16,13.19L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/>
+                    </svg>
+                    <div>
+                        <small>GET IT ON</small>
+                        <strong>Google Play</strong>
+                    </div>
+                </a>
+            </div>
+            <p class="download-info">Version 1.0.0 • Free • No Ads • No In-App Purchases</p>
+        </div>
+    </section>
+
+    <!-- Privacy Section -->
+    <section id="privacy" class="privacy">
+        <div class="container">
+            <h2 class="section-title">Your Privacy Matters</h2>
+            <div class="privacy-highlights">
+                <div class="privacy-item">
+                    <span class="privacy-icon">🔒</span>
+                    <h3>Local Storage Only</h3>
+                    <p>All data stays on your device. No cloud uploads, no external servers.</p>
+                </div>
+                <div class="privacy-item">
+                    <span class="privacy-icon">🚫</span>
+                    <h3>No Data Sharing</h3>
+                    <p>We don't share, sell, or transmit your location data to anyone.</p>
+                </div>
+                <div class="privacy-item">
+                    <span class="privacy-icon">✅</span>
+                    <h3>Full Control</h3>
+                    <p>Delete your data anytime. Export for personal use. You're in charge.</p>
+                </div>
+            </div>
+            <a href="privacy.html" class="btn btn-outline">Read Full Privacy Policy</a>
+        </div>
+    </section>
+
+    <!-- Support Section -->
+    <section id="support" class="support">
+        <div class="container">
+            <h2 class="section-title">Need Help?</h2>
+            <div class="support-grid">
+                <div class="support-card">
+                    <h3>📧 Email Support</h3>
+                    <p>Get help from our support team</p>
+                    <a href="mailto:contact@shivarya.dev">contact@shivarya.dev</a>
+                </div>
+                <div class="support-card">
+                    <h3>📖 Documentation</h3>
+                    <p>Learn how to use all features</p>
+                    <a href="https://github.com/shivarya/location-tracker#readme" target="_blank">Read Docs</a>
+                </div>
+                <div class="support-card">
+                    <h3>🐛 Report Issues</h3>
+                    <p>Found a bug? Let us know</p>
+                    <a href="https://github.com/shivarya/location-tracker/issues" target="_blank">GitHub Issues</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>Location & Speed Tracker</h3>
+                    <p>Real-time GPS tracking made simple</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>App</h4>
+                        <ul>
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#download">Download</a></li>
+                            <li><a href="https://github.com/shivarya/location-tracker" target="_blank">Source Code</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="privacy.html">Privacy Policy</a></li>
+                            <li><a href="terms.html">Terms of Service</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Developer</h4>
+                        <ul>
+                            <li><a href="https://shivarya.dev" target="_blank">Website</a></li>
+                            <li><a href="https://github.com/shivarya" target="_blank">GitHub</a></li>
+                            <li><a href="mailto:contact@shivarya.dev">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Shivarya. All rights reserved.</p>
+                <p>Made with ❤️ using React Native & Expo</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
