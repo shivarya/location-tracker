@@ -370,9 +370,13 @@ Once hosted, add the URL to the Play Console privacy policy field.
 1. Go to **Policy → Data safety**
 2. Fill in:
    - **Does app collect data**: Yes
-   - **Location data**: Collected, Not shared, Optional, Ephemeral
-   - **Purpose**: App functionality
+   - **Location data**: Precise location - Collected, Not shared, Required for app functionality
+   - **Data usage**: App functionality (GPS tracking while app is active)
+   - **Data retention**: User can delete data anytime
+   - **Background location**: NO (only foreground tracking)
    - Click **Next** and save
+
+**Note**: App only collects location when actively tracking and app is in foreground (visible on screen).
 
 ---
 
@@ -458,29 +462,68 @@ eas build --platform android --profile preview
 
 ## 🔄 App Updates
 
-To release updates:
+To release a new version of your app:
 
-1. Update version in `app.json`:
+1. **Update version in `app.json`** (this is the ONLY place you need to update):
 ```json
 {
   "expo": {
     "version": "1.1.0",
     "android": {
-      "versionCode": 2
+      "versionCode": 3
     }
   }
 }
 ```
 
+**Note**: The `android/app/build.gradle` file automatically reads the version from `app.json`, so you don't need to update it manually. This ensures version numbers stay in sync.
+
 2. Build new AAB:
 ```bash
+# Local build
+cd android
+.\gradlew bundleRelease
+
+# Or use EAS
 eas build --platform android --profile production
 ```
 
 3. Go to **Production** → **Create new release**
-4. Upload new AAB
-5. Add release notes
+4. Upload new AAB: `android/app/build/outputs/bundle/release/app-release.aab`
+5. Add release notes with language tags:
+```
+<en-US>
+Version 1.1.0 Update
+
+What's New:
+- Bug fixes and improvements
+- Performance optimizations
+- UI enhancements
+</en-US>
+```
 6. Submit for review
+
+### Important Notes for Updates:
+
+**Removing Background Location Permission:**
+If you previously had `ACCESS_BACKGROUND_LOCATION` and removed it (as in this version):
+
+1. **Version code MUST increase** (e.g., 1 → 2)
+2. **Explain in release notes** that background location was removed
+3. **Update Data Safety form** to reflect foreground-only location access
+4. Google may ask why permission was removed - explain it wasn't needed for core functionality
+
+**Permissions Declaration:**
+Current version uses only:
+- `ACCESS_FINE_LOCATION` - For GPS tracking while app is open
+- `ACCESS_COARSE_LOCATION` - Fallback location method
+
+Background location permission has been removed to:
+- Simplify Google Play approval process
+- Reduce privacy concerns
+- Focus on core foreground tracking functionality
+
+**Note**: Users need to keep app visible on screen while tracking. This is acceptable for most use cases (running, cycling, etc.).
 
 ---
 

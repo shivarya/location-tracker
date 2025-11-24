@@ -2,7 +2,7 @@
   "expo": {
     "name": "Location & Speed Tracker",
     "slug": "location-speed-tracker",
-    "version": "1.0.0",
+    "version": "1.0.4",
     "description": "Real-time GPS tracking app with live speed monitoring, route recording, and comprehensive session analytics. Track your speed, location, altitude with metric/imperial units support.",
     "githubUrl": "https://github.com/shivarya/location-tracker",
     "orientation": "portrait",
@@ -15,7 +15,7 @@
     },
     "android": {
       "package": "com.shivarya.locationspeedtracker",
-      "versionCode": 1,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#0A1929",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -24,8 +24,7 @@
       },
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_COARSE_LOCATION"
       ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false

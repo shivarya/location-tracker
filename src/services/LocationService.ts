@@ -16,10 +16,8 @@ class LocationService {
         return false;
       }
 
-      // Request background location permission
-      const backgroundPermission =
-        await Location.requestBackgroundPermissionsAsync();
-      return backgroundPermission.status === 'granted';
+      // Only foreground permission needed - tracking works when app is open
+      return true;
     } catch (error) {
       console.error('Permission error:', error);
       return false;
