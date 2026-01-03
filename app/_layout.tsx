@@ -5,6 +5,9 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+// Import background location task (must be at top-level module scope)
+import '../src/tasks/backgroundLocation';
+
 export const unstable_settings = {
   anchor: '(tabs)',
 };

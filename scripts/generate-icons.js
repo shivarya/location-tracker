@@ -94,7 +94,7 @@ const ICON_SPECS = {
 const ASSETS_DIR = path.join(__dirname, '..', 'assets', 'images');
 const OUTPUT_DIR = path.join(__dirname, '..', 'play-store-assets');
 const SVG_LOGO = path.join(ASSETS_DIR, 'app-logo.svg');
-const SVG_ICON_SIMPLE = path.join(ASSETS_DIR, 'app-icon-simple.svg');
+const SVG_ICON_SIMPLE = path.join(ASSETS_DIR, 'app-icon-modern.svg');
 
 // Ensure output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {

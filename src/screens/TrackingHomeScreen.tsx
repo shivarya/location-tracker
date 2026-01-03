@@ -1,12 +1,16 @@
-import React, { useEffect, useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View, AppState, AppStateStatus } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LocationCard } from '../components/LocationCard';
 import { SpeedDisplay } from '../components/SpeedDisplay';
 import { StatisticsCard } from '../components/StatisticsCard';
 import { UnitToggle } from '../components/UnitToggle';
+import { GPSStrengthIndicator } from '../components/GPSStrengthIndicator';
 import LocationService from '../services/LocationService';
 import StorageService from '../services/StorageService';
+import NetworkService from '../services/NetworkService';
 import { RootState } from '../store';
 import {
     addLocationPoint,
@@ -19,18 +23,84 @@ import {
 } from '../store/actions';
 import { UNIT_SYSTEMS } from '../utils/constants';
 import { convertDistance, formatDuration, getDistanceUnitLabel } from '../utils/conversions';
+import { LocationPoint } from '../store/types';
 
 export default function TrackingHomeScreen() {
   const dispatch = useDispatch();
   const { isTracking, currentSession, currentLocation, unitSystem } = useSelector(
     (state: RootState) => state.tracking
   );
+  const [isOnline, setIsOnline] = useState(true);
 
   const sessionRef = useRef(currentSession);
+  const appState = useRef(AppState.currentState);
 
   useEffect(() => {
     sessionRef.current = currentSession;
   }, [currentSession]);
+
+  // Sync background locations when app returns to foreground
+  const syncBackgroundLocations = async () => {
+    try {
+      const backgroundData = await AsyncStorage.getItem('background_locations');
+      if (backgroundData) {
+        const backgroundLocations: LocationPoint[] = JSON.parse(backgroundData);
+        
+        if (backgroundLocations.length > 0) {
+          console.log(`Syncing ${backgroundLocations.length} background locations`);
+          
+          // Add all background locations to current session
+          backgroundLocations.forEach((location) => {
+            dispatch(updateLocation(location));
+            dispatch(addLocationPoint(location));
+          });
+
+          // Clear synced locations
+          await AsyncStorage.removeItem('background_locations');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to sync background locations:', error);
+    }
+  };
+
+  // Handle AppState changes (background/foreground)
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App has come to the foreground
+        console.log('App returned to foreground');
+        
+        if (isTracking) {
+          // Sync any background locations
+          await syncBackgroundLocations();
+          
+          // Restart foreground location watching to get fresh updates
+          await LocationService.stopWatching();
+          const success = await LocationService.startWatching(
+            (location) => {
+              dispatch(updateLocation(location));
+              dispatch(addLocationPoint(location));
+            },
+            (error) => {
+              dispatch(setError(error));
+            },
+            1000
+          );
+          
+          if (!success) {
+            dispatch(setError('Failed to restart tracking after screen wake'));
+          }
+        }
+      }
+      
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isTracking, dispatch]);
 
   // Request permissions on mount
   useEffect(() => {
@@ -42,8 +112,22 @@ export default function TrackingHomeScreen() {
     };
     requestPerms();
 
+    // Initialize network monitoring
+    NetworkService.initialize();
+    
+    // Get initial network status
+    NetworkService.getNetworkStatus().then((online) => {
+      setIsOnline(online);
+    });
+
+    // Add network status listener
+    const removeNetworkListener = NetworkService.addListener((online) => {
+      setIsOnline(online);
+    });
+
     return () => {
       LocationService.cleanup();
+      removeNetworkListener();
     };
   }, [dispatch]);
 
@@ -79,6 +163,13 @@ export default function TrackingHomeScreen() {
   }, [isTracking, dispatch]);
 
   const handleStartTracking = async () => {
+    // Keep screen awake during tracking
+    try {
+      await activateKeepAwakeAsync();
+    } catch (error) {
+      console.warn('Failed to activate keep awake:', error);
+    }
+
     const startSuccess = await LocationService.startWatching(
       (location) => {
         dispatch(updateLocation(location));
@@ -91,9 +182,24 @@ export default function TrackingHomeScreen() {
 
     if (startSuccess) {
       dispatch(startTracking());
-      dispatch(clearError());
+    // Stop foreground and background tracking
+    await LocationService.stopWatching();
+    await LocationService.stopBackgroundTracking();
+    
+    // Sync any remaining background locations before stopping
+    await syncBackgroundLocations();
+
+    // Deactivate keep awake
+    deactivateKeepAwake
+      
+      // Start background tracking if permissions available
+      const hasBackgroundPermission = await LocationService.checkBackgroundPermissions();
+      if (hasBackgroundPermission) {
+        await LocationService.startBackgroundTracking();
+      }
     } else {
       dispatch(setError('Failed to start location tracking'));
+      deactivateKeepAwake();
     }
   };
 
@@ -137,16 +243,30 @@ export default function TrackingHomeScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Header Section */}
       <View style={styles.header}>
-        <Text style={styles.title}>
-          {isTracking ? 'Live Tracking' : 'Location & Speed Tracker'}
-        </Text>
-        <Text style={styles.subtitle}>
-          {isTracking ? formatDuration(duration) : 'Real-time GPS tracking with speed monitoring'}
-        </Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.title}>
+              {isTracking ? 'Live Tracking' : 'SpeedTrack'}
+            </Text>
+            <Text style={styles.subtitle}>
+              {isTracking ? formatDuration(duration) : 'Real-time GPS tracking with speed monitoring'}
+            </Text>
+          </View>
+          {!isOnline && (
+            <View style={styles.offlineBadge}>
+              <Text style={styles.offlineText}>Offline</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Unit Toggle */}
       <UnitToggle currentUnit={unitSystem} onToggle={handleUnitToggle} />
+
+      {/* GPS Strength Indicator */}
+      {currentLocation && (
+        <GPSStrengthIndicator accuracy={currentLocation.accuracy} />
+      )}
 
       {/* Current Location Display */}
       {currentLocation && (
@@ -196,7 +316,8 @@ export default function TrackingHomeScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>Tips:</Text>
           <Text style={styles.infoText}>• Enable location services for best accuracy</Text>
-          <Text style={styles.infoText}>• Keep the app open while tracking</Text>
+          <Text style={styles.infoText}>• App works offline - GPS doesn't need internet</Text>
+          <Text style={styles.infoText}>• Background tracking keeps recording when screen is off</Text>
           <Text style={styles.infoText}>• Tap speed to toggle between km/h and mph</Text>
         </View>
       )}
@@ -215,6 +336,14 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 20,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerLeft: {
+    flex: 1,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -224,6 +353,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#95A5A6',
     marginTop: 5,
+  },
+  offlineBadge: {
+    backgroundColor: '#E67E22',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    marginLeft: 10,
+  },
+  offlineText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   button: {
     paddingVertical: 15,

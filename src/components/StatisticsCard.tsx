@@ -1,6 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { convertDistance, getDistanceUnitLabel, formatDuration } from '../utils/conversions';
+import { 
+  convertDistance, 
+  convertSpeed, 
+  getDistanceUnitLabel, 
+  getSpeedUnitLabel, 
+  formatDuration 
+} from '../utils/conversions';
 import { TrackingSession } from '../store/types';
 
 interface StatisticsCardProps {
@@ -21,6 +27,11 @@ export const StatisticsCard: React.FC<StatisticsCardProps> = ({
     unitSystem
   );
   const distanceUnit = getDistanceUnitLabel(unitSystem);
+  const speedUnit = getSpeedUnitLabel(unitSystem);
+
+  const avgSpeed = convertSpeed(session.statistics.avgSpeed, unitSystem);
+  const maxSpeed = convertSpeed(session.statistics.maxSpeed, unitSystem);
+  const minSpeed = convertSpeed(session.statistics.minSpeed, unitSystem);
 
   return (
     <View style={styles.container}>
@@ -44,21 +55,21 @@ export const StatisticsCard: React.FC<StatisticsCardProps> = ({
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Avg Speed</Text>
           <Text style={styles.statValue}>
-            {session.statistics.avgSpeed.toFixed(1)} m/s
+            {avgSpeed.toFixed(1)} {speedUnit}
           </Text>
         </View>
 
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Max Speed</Text>
           <Text style={styles.statValue}>
-            {session.statistics.maxSpeed.toFixed(1)} m/s
+            {maxSpeed.toFixed(1)} {speedUnit}
           </Text>
         </View>
 
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Min Speed</Text>
           <Text style={styles.statValue}>
-            {session.statistics.minSpeed.toFixed(1)} m/s
+            {minSpeed.toFixed(1)} {speedUnit}
           </Text>
         </View>
 

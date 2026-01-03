@@ -1,13 +1,16 @@
 import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
 import { LocationPoint } from '../store/types';
+import { BACKGROUND_LOCATION_TASK } from '../tasks/backgroundLocation';
 
 class LocationService {
   private locationSubscription: Location.LocationSubscription | null = null;
   private onLocationUpdate: ((location: LocationPoint) => void) | null = null;
   private onError: ((error: string) => void) | null = null;
+  private isBackgroundTracking: boolean = false;
 
   /**
-   * Request location permissions
+   * Request location permissions including background
    */
   async requestPermissions(): Promise<boolean> {
     try {
@@ -16,7 +19,14 @@ class LocationService {
         return false;
       }
 
-      // Only foreground permission needed - tracking works when app is open
+      // Request background permission for tracking when screen is off
+      const backgroundPermission = await Location.requestBackgroundPermissionsAsync();
+      if (backgroundPermission.status !== 'granted') {
+        console.warn('Background location permission not granted');
+        // Still return true - app can work with foreground only
+        return true;
+      }
+
       return true;
     } catch (error) {
       console.error('Permission error:', error);
@@ -33,6 +43,19 @@ class LocationService {
       return foreground.status === 'granted';
     } catch (error) {
       console.error('Check permissions error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if background location permissions are granted
+   */
+  async checkBackgroundPermissions(): Promise<boolean> {
+    try {
+      const background = await Location.getBackgroundPermissionsAsync();
+      return background.status === 'granted';
+    } catch (error) {
+      console.error('Check background permissions error:', error);
       return false;
     }
   }
@@ -127,7 +150,7 @@ class LocationService {
   }
 
   /**
-   * Get satellite count (if available)
+   * Get last known location async
    */
   async getLastKnownLocationAsync(): Promise<LocationPoint | null> {
     try {
@@ -150,10 +173,77 @@ class LocationService {
   }
 
   /**
+   * Start background location tracking with foreground service
+   */
+  async startBackgroundTracking(): Promise<boolean> {
+    try {
+      const hasBackgroundPermission = await this.checkBackgroundPermissions();
+      if (!hasBackgroundPermission) {
+        console.warn('Background location permission not granted');
+        return false;
+      }
+
+      // Check if already registered
+      const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_LOCATION_TASK);
+      if (isRegistered) {
+        console.log('Background location task already registered');
+        this.isBackgroundTracking = true;
+        return true;
+      }
+
+      // Start background location updates with foreground service
+      await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
+        accuracy: Location.Accuracy.High,
+        timeInterval: 5000, // Update every 5 seconds in background
+        distanceInterval: 10, // Or every 10 meters
+        foregroundService: {
+          notificationTitle: 'SpeedTrack',
+          notificationBody: 'Recording your route in background',
+          notificationColor: '#00D4FF',
+        },
+        pausesUpdatesAutomatically: false,
+        activityType: Location.ActivityType.Fitness,
+        showsBackgroundLocationIndicator: true,
+      });
+
+      this.isBackgroundTracking = true;
+      console.log('Background location tracking started');
+      return true;
+    } catch (error) {
+      console.error('Start background tracking error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Stop background location tracking
+   */
+  async stopBackgroundTracking(): Promise<void> {
+    try {
+      const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_LOCATION_TASK);
+      if (isRegistered) {
+        await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+        console.log('Background location tracking stopped');
+      }
+      this.isBackgroundTracking = false;
+    } catch (error) {
+      console.error('Stop background tracking error:', error);
+    }
+  }
+
+  /**
+   * Check if background tracking is active
+   */
+  isBackgroundTrackingActive(): boolean {
+    return this.isBackgroundTracking;
+  }
+
+  /**
    * Cleanup
    */
   async cleanup(): Promise<void> {
     await this.stopWatching();
+    await this.stopBackgroundTracking();
     this.onLocationUpdate = null;
     this.onError = null;
   }

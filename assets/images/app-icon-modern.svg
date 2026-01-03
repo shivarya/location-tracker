@@ -1,0 +1,68 @@
+<svg width="432" height="432" viewBox="0 0 432 432" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Clean blue balloon icon with transparent background -->
+  
+  <defs>
+    <linearGradient id="pinGradient" x1="216" y1="80" x2="216" y2="352" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00E5FF"/>
+      <stop offset="100%" stop-color="#0091EA"/>
+    </linearGradient>
+    
+    <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+      <feOffset dx="0" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Main location pin (blue balloon) -->
+  <g filter="url(#dropShadow)">
+    <path d="M 216 80 
+             C 150 80 96 134 96 200 
+             C 96 280 216 352 216 352 
+             C 216 352 336 280 336 200 
+             C 336 134 282 80 216 80 Z" 
+          fill="url(#pinGradient)"
+          stroke="#FFFFFF"
+          stroke-width="4"/>
+  </g>
+  
+  <!-- Inner speedometer circle (dark background) -->
+  <circle cx="216" cy="200" r="70" fill="#0A1929"/>
+  
+  <!-- Speedometer arc background -->
+  <path d="M 166 200 A 50 50 0 0 1 266 200" 
+        stroke="#1E3A4F" 
+        stroke-width="10" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <!-- Speedometer active arc -->
+  <path d="M 166 200 A 50 50 0 0 1 241 175" 
+        stroke="#00E5FF" 
+        stroke-width="10" 
+        fill="none" 
+        stroke-linecap="round"/>
+  
+  <!-- Tick marks -->
+  <g stroke="#00D4FF" stroke-width="4" stroke-linecap="round">
+    <line x1="168" y1="203" x2="176" y2="211"/>
+    <line x1="216" y1="152" x2="216" y2="165"/>
+    <line x1="264" y1="203" x2="256" y2="211"/>
+  </g>
+  
+  <!-- Speed indicator needle -->
+  <g>
+    <line x1="216" y1="200" x2="248" y2="176" 
+          stroke="#FFFFFF" 
+          stroke-width="6" 
+          stroke-linecap="round"/>
+    <circle cx="216" cy="200" r="8" fill="#00E5FF"/>
+    <circle cx="216" cy="200" r="4" fill="#FFFFFF"/>
+  </g>
+</svg>

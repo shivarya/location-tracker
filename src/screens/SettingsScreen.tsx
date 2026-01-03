@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import Constants from 'expo-constants';
 import { RootState } from '../store';
 import { setUnitSystem, loadSessions } from '../store/actions';
 import StorageService from '../services/StorageService';
@@ -71,7 +72,7 @@ export default function SettingsScreen() {
           <Ionicons name="bar-chart-outline" size={20} color="#00D4FF" />
           <View style={styles.infoContent}>
             <Text style={styles.infoLabel}>App Version</Text>
-            <Text style={styles.infoValue}>1.0.0</Text>
+            <Text style={styles.infoValue}>{Constants.expoConfig?.version || '1.0.5'}</Text>
           </View>
         </View>
       </View>

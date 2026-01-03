@@ -13,7 +13,7 @@ import { deleteSession, loadSessions } from '../store/actions';
 import StorageService from '../services/StorageService';
 import { TrackingSession } from '../store/types';
 import { Ionicons } from '@expo/vector-icons';
-import { formatDuration, convertDistance, getDistanceUnitLabel } from '../utils/conversions';
+import { formatDuration, convertDistance, convertSpeed, getDistanceUnitLabel, getSpeedUnitLabel } from '../utils/conversions';
 
 export default function HistoryScreen() {
   const dispatch = useDispatch();
@@ -74,6 +74,8 @@ export default function HistoryScreen() {
     const duration = session.statistics.duration;
     const distance = convertDistance(session.statistics.totalDistance, unitSystem);
     const distanceUnit = getDistanceUnitLabel(unitSystem);
+    const maxSpeed = convertSpeed(session.statistics.maxSpeed, unitSystem);
+    const speedUnit = getSpeedUnitLabel(unitSystem);
 
     return (
       <View style={styles.sessionItem}>
@@ -89,7 +91,7 @@ export default function HistoryScreen() {
               📍 {distance.toFixed(2)} {distanceUnit}
             </Text>
             <Text style={styles.sessionStat}>
-              🚀 {session.statistics.maxSpeed.toFixed(1)} m/s
+              🚀 {maxSpeed.toFixed(1)} {speedUnit}
             </Text>
           </View>
         </View>

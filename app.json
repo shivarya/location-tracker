@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Location & Speed Tracker",
+    "name": "SpeedTrack",
     "slug": "location-speed-tracker",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "Real-time GPS tracking app with live speed monitoring, route recording, and comprehensive session analytics. Track your speed, location, altitude with metric/imperial units support.",
     "githubUrl": "https://github.com/shivarya/location-tracker",
     "orientation": "portrait",
@@ -15,16 +15,13 @@
     },
     "android": {
       "package": "com.shivarya.locationspeedtracker",
-      "versionCode": 6,
-      "adaptiveIcon": {
-        "backgroundColor": "#0A1929",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
+      "versionCode": 9,
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
       ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -35,6 +32,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "locationAlwaysAndWhenInUsePermission": "Allow SpeedTrack to track your location in the background for accurate route recording while the screen is off."
+        }
+      ],
       [
         "expo-splash-screen",
         {
