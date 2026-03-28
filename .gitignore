@@ -38,6 +38,8 @@ android/app/debug
 android/app/release
 android/.gradle
 android/local.properties
+android/keystore.properties
+android/keystore.play.properties
 android/build/
 android/.project
 android/.classpath
@@ -94,6 +96,7 @@ jest-coverage/
 # Build output
 out/
 .next/
+build-artifacts/
 
 # Temporary files
 tmp/

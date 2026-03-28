@@ -5,6 +5,42 @@ All notable changes to Location & Speed Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2026-03-28
+
+### Added
+- Live Google map section on Home with current location marker and route polyline from session points.
+- Configured Google Maps Android API key for release builds to support production map rendering.
+
+### Changed
+- Bumped app version to 1.0.8 and Android versionCode to 11 for Play Store release.
+
+### Google Play Notes
+- Added live Google map on the Home screen with your current position and route line.
+- Added production Google Maps key setup for stable map rendering.
+- Internal release version update for Play Store submission.
+
+## [1.0.7] - 2026-03-28
+
+### Added
+- Live in-app Google map on Home with current location marker and route polyline.
+- Offline area preparation on the tracking screen to prewarm nearby map tiles before travel.
+- Offline map prepared-area management in Settings.
+
+### Changed
+- Improved offline tracking accuracy with GPS quality filtering and smarter speed/distance calculation.
+- Added session-scoped background location buffering with ordered merge on resume.
+- Improved tracking session lifecycle handling for start/stop stability.
+
+### Fixed
+- Reduced duplicate point merges after returning from background.
+- Improved consistency of session statistics in low-signal conditions.
+
+### Google Play Notes
+- Better offline tracking accuracy for speed and distance.
+- New live map view during tracking with visible route.
+- Added offline map prep to cache nearby areas before your trip.
+- Improved background tracking continuity and stability.
+
 ## [1.0.5] - 2025-11-25
 
 ### Changed
@@ -104,4 +140,4 @@ Fixed:
 - **Minor (1.X.0)**: New features, backwards compatible
 - **Patch (1.0.X)**: Bug fixes and minor improvements
 
-**Version Code**: Must increment by 1 for each Google Play upload (currently: 5)
+**Version Code**: Must increment by 1 for each Google Play upload (currently: 11)

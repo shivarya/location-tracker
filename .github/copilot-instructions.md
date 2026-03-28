@@ -1,14 +1,15 @@
 # GitHub Copilot Instructions for Location & Speed Tracker
 
 ## Project Overview
-This is a React Native + Expo application for real-time GPS location and speed tracking. The app tracks user location, speed, distance, and session history with support for both metric and imperial units.
+This is a React Native + Expo application for real-time GPS location and speed tracking. The app tracks user location, speed, distance, and session history with support for both metric and imperial units, and includes a live Google map on Home.
 
 ## Technology Stack
 - **Framework**: React Native 0.81.5 with Expo 54.0.23
 - **Language**: TypeScript 5.9.2
 - **State Management**: Redux 5.0.0 with React-Redux 9.1.0
 - **Navigation**: Expo Router (file-based routing)
-- **Location Services**: expo-location (foreground only)
+- **Location Services**: expo-location + expo-task-manager (foreground + background-capable)
+- **Map SDK**: react-native-maps (Google provider)
 - **Storage**: @react-native-async-storage/async-storage
 - **Build System**: Gradle 8.14.3 (Android)
 - **Target Platforms**: Android (Google Play Store)
@@ -36,10 +37,10 @@ This is a React Native + Expo application for real-time GPS location and speed t
 - Types are defined in `/src/store/types.ts`
 
 ### Location Tracking
-- **IMPORTANT**: Only foreground location permissions are used
-- No background location tracking (compliance with Google Play policies)
+- Background-capable location tracking is enabled and used for session continuity
 - Uses `expo-location` with `watchPositionAsync()` for real-time updates
-- Tracking only works when app is visible/open
+- Uses task-based background updates and syncs buffered points on foreground resume
+- Home screen displays a live Google map with current marker and session route polyline
 
 ### Code Style
 - Use TypeScript strict mode
@@ -114,10 +115,14 @@ android/app/build/outputs/mapping/release/mapping.txt
 ## Google Play Store Compliance
 
 ### Permissions Policy
-- **NO** `ACCESS_BACKGROUND_LOCATION` permission
-- Only foreground location: `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`
+- `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, and `ACCESS_BACKGROUND_LOCATION` are enabled
 - Declared in both `app.json` and `android/app/src/main/AndroidManifest.xml`
 - Must stay in sync between both files
+
+### Google Maps API Key
+- Configure Android key in `app.json` under `expo.android.config.googleMaps.apiKey`
+- Restrict key in Google Cloud to package `com.shivarya.locationspeedtracker` with release SHA-1 fingerprints
+- Keep release SHA fingerprints in sync with signing keys used for AAB generation
 
 ### Privacy Requirements
 - Privacy policy must be hosted and accessible
@@ -143,9 +148,9 @@ android/app/build/outputs/mapping/release/mapping.txt
 
 ### Modifying Location Tracking
 - Only modify `/src/services/LocationService.ts`
-- Ensure foreground-only permission requests
-- Never add background location features
-- Test permission flows on Android
+- Keep foreground and background permission requests consistent with policy
+- Keep `/src/tasks/backgroundLocation.ts` and foreground sync flow aligned
+- Test permission flows and app background/foreground transitions on Android
 
 ### Updating Dependencies
 ```bash
@@ -177,6 +182,7 @@ npm run generate-icons
 
 ### Always Update Together
 - `app.json` permissions ↔ `android/app/src/main/AndroidManifest.xml` permissions
+- `app.json` `expo.android.config.googleMaps.apiKey` ↔ Google Cloud key restrictions (package + SHA)
 - `app.json` version ↔ Release notes in `GOOGLE_PLAY_GUIDE.md`
 
 ### Sensitive Files (Not in Git)
@@ -189,12 +195,13 @@ npm run generate-icons
 ### Before Release Build
 - [ ] Version incremented in `app.json`
 - [ ] CHANGELOG.md updated with version changes
-- [ ] No `ACCESS_BACKGROUND_LOCATION` in AndroidManifest.xml
-- [ ] Location service only requests foreground permissions
+- [ ] Permission model in `app.json` and `AndroidManifest.xml` is intentionally aligned
 - [ ] App.json permissions match AndroidManifest.xml
+- [ ] Google Maps API key is configured and restricted to package + release SHA
 - [ ] Privacy policy is accessible online
 - [ ] Icons are transparent with safe padding
-- [ ] Test location tracking works when app is open
+- [ ] Test location tracking in foreground and during app background transitions
+- [ ] Test live map tile loading and route rendering on Home
 - [ ] Test unit conversion (metric ↔ imperial)
 - [ ] Test session history persistence
 
@@ -213,9 +220,9 @@ npm run generate-icons
 - Rebuild: `cd android && .\gradlew bundleRelease`
 
 ### "Background location permission found"
-- Check `android/app/src/main/AndroidManifest.xml`
-- Remove `<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>`
-- Rebuild app
+- Verify permission policy for the current release scope
+- Ensure `app.json` and `AndroidManifest.xml` are intentionally aligned
+- Update release notes/policy text if permission model changed
 
 ### "Build fails with version error"
 - Ensure `build.gradle` has JsonSlurper import
@@ -223,9 +230,9 @@ npm run generate-icons
 - Check projectRoot path is correct
 
 ### Location not updating
-- Verify foreground permissions granted
-- Check app is in foreground (not minimized)
-- Ensure GPS is enabled on device
+- Verify foreground and background permissions granted as required
+- Check GPS is enabled on device
+- If app resumed from background, verify buffered points are syncing
 - Check LocationService.startWatching() is called
 
 ## Code Conventions

@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, AppState, AppStateStatus } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { LocationCard } from '../components/LocationCard';
 import { SpeedDisplay } from '../components/SpeedDisplay';
 import { StatisticsCard } from '../components/StatisticsCard';
@@ -25,6 +26,13 @@ import { UNIT_SYSTEMS } from '../utils/constants';
 import { convertDistance, formatDuration, getDistanceUnitLabel } from '../utils/conversions';
 import { LocationPoint } from '../store/types';
 
+const DEFAULT_MAP_REGION = {
+  latitude: 12.9716,
+  longitude: 77.5946,
+  latitudeDelta: 0.01,
+  longitudeDelta: 0.01,
+};
+
 export default function TrackingHomeScreen() {
   const dispatch = useDispatch();
   const { isTracking, currentSession, currentLocation, unitSystem } = useSelector(
@@ -40,7 +48,7 @@ export default function TrackingHomeScreen() {
   }, [currentSession]);
 
   // Sync background locations when app returns to foreground
-  const syncBackgroundLocations = async () => {
+  const syncBackgroundLocations = useCallback(async () => {
     try {
       const backgroundData = await AsyncStorage.getItem('background_locations');
       if (backgroundData) {
@@ -62,7 +70,7 @@ export default function TrackingHomeScreen() {
     } catch (error) {
       console.error('Failed to sync background locations:', error);
     }
-  };
+  }, [dispatch]);
 
   // Handle AppState changes (background/foreground)
   useEffect(() => {
@@ -100,7 +108,7 @@ export default function TrackingHomeScreen() {
     return () => {
       subscription.remove();
     };
-  }, [isTracking, dispatch]);
+  }, [isTracking, dispatch, syncBackgroundLocations]);
 
   // Request permissions on mount
   useEffect(() => {
@@ -190,7 +198,7 @@ export default function TrackingHomeScreen() {
     await syncBackgroundLocations();
 
     // Deactivate keep awake
-    deactivateKeepAwake
+    deactivateKeepAwake();
       
       // Start background tracking if permissions available
       const hasBackgroundPermission = await LocationService.checkBackgroundPermissions();
@@ -238,6 +246,18 @@ export default function TrackingHomeScreen() {
     : 0;
   const distanceUnit = getDistanceUnitLabel(unitSystem);
   const duration = currentSession ? currentSession.statistics.duration : 0;
+  const routeCoordinates = (currentSession?.points ?? []).map(point => ({
+    latitude: point.latitude,
+    longitude: point.longitude,
+  }));
+  const liveRegion = currentLocation
+    ? {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      }
+    : DEFAULT_MAP_REGION;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -267,6 +287,39 @@ export default function TrackingHomeScreen() {
       {currentLocation && (
         <GPSStrengthIndicator accuracy={currentLocation.accuracy} />
       )}
+
+      {/* Live Map */}
+      <View style={styles.mapCard}>
+        <Text style={styles.sectionTitle}>Live Map</Text>
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          region={liveRegion}
+          showsUserLocation
+          showsMyLocationButton
+          showsCompass
+        >
+          {routeCoordinates.length > 1 && (
+            <Polyline
+              coordinates={routeCoordinates}
+              strokeColor="#00D4FF"
+              strokeWidth={4}
+            />
+          )}
+          {currentLocation && (
+            <Marker
+              coordinate={{
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude,
+              }}
+              title="Current Position"
+            />
+          )}
+        </MapView>
+        {!currentLocation && (
+          <Text style={styles.mapHint}>Waiting for GPS location...</Text>
+        )}
+      </View>
 
       {/* Current Location Display */}
       {currentLocation && (
@@ -316,7 +369,7 @@ export default function TrackingHomeScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>Tips:</Text>
           <Text style={styles.infoText}>• Enable location services for best accuracy</Text>
-          <Text style={styles.infoText}>• App works offline - GPS doesn't need internet</Text>
+          <Text style={styles.infoText}>• App works offline - GPS does not need internet</Text>
           <Text style={styles.infoText}>• Background tracking keeps recording when screen is off</Text>
           <Text style={styles.infoText}>• Tap speed to toggle between km/h and mph</Text>
         </View>
@@ -405,6 +458,27 @@ const styles = StyleSheet.create({
     color: '#00D4FF',
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  mapCard: {
+    backgroundColor: '#34495E',
+    borderRadius: 10,
+    padding: 12,
+    marginVertical: 10,
+  },
+  sectionTitle: {
+    color: '#ECF0F1',
+    fontWeight: 'bold',
+    marginBottom: 10,
+    fontSize: 16,
+  },
+  map: {
+    height: 230,
+    borderRadius: 8,
+  },
+  mapHint: {
+    color: '#95A5A6',
+    marginTop: 8,
+    fontSize: 12,
   },
   infoBox: {
     backgroundColor: '#34495E',

@@ -3,7 +3,6 @@ import { Provider } from 'react-redux';
 import { store } from '../src/store';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
 
 // Import background location task (must be at top-level module scope)
 import '../src/tasks/backgroundLocation';
