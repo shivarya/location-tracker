@@ -252,10 +252,13 @@ export default function TrackingHomeScreen() {
     latitude: point.latitude,
     longitude: point.longitude,
   }));
+  const mapConfigExtra = (Constants.expoConfig?.extra as any)?.mapsConfig;
   const configuredMapApiKey = (((Constants.expoConfig?.android as any)?.config?.googleMaps?.apiKey ?? '') as string).trim();
   const isMapApiKeyConfigured =
-    configuredMapApiKey.length > 0 &&
-    configuredMapApiKey !== 'REPLACE_WITH_GOOGLE_MAPS_ANDROID_API_KEY';
+    typeof mapConfigExtra?.androidKeyConfigured === 'boolean'
+      ? mapConfigExtra.androidKeyConfigured
+      : configuredMapApiKey.length > 0 &&
+        configuredMapApiKey !== 'REPLACE_WITH_GOOGLE_MAPS_ANDROID_API_KEY';
   const liveRegion = currentLocation
     ? {
         latitude: currentLocation.latitude,

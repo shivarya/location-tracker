@@ -7,6 +7,9 @@ module.exports = ({ config }) => {
     process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY ||
     baseConfig?.android?.config?.googleMaps?.apiKey ||
     'REPLACE_WITH_GOOGLE_MAPS_ANDROID_API_KEY';
+  const isAndroidMapsKeyConfigured =
+    googleMapsApiKey &&
+    googleMapsApiKey !== 'REPLACE_WITH_GOOGLE_MAPS_ANDROID_API_KEY';
 
   return {
     ...baseConfig,
@@ -18,6 +21,13 @@ module.exports = ({ config }) => {
           ...((baseConfig.android?.config || {}).googleMaps || {}),
           apiKey: googleMapsApiKey,
         },
+      },
+    },
+    extra: {
+      ...(baseConfig.extra || {}),
+      mapsConfig: {
+        ...((baseConfig.extra || {}).mapsConfig || {}),
+        androidKeyConfigured: Boolean(isAndroidMapsKeyConfigured),
       },
     },
   };
