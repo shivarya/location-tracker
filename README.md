@@ -50,10 +50,18 @@ npm install --legacy-peer-deps
 npm start
 ```
 
-3. **Run on Android**
+3. **Configure Google Maps Key (Local Only)**
+```bash
+cp .env.example .env.local
+```
+Then set `GOOGLE_MAPS_ANDROID_API_KEY` in `.env.local`.
+
+4. **Run on Android**
 ```bash
 npm run android
 ```
+
+If map tiles appear blank, verify the key is restricted in Google Cloud for package `com.shivarya.locationspeedtracker` and your release/debug SHA fingerprints.
 
 ## 📋 Project Structure
 

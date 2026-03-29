@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, AppState, AppStateStatus } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, AppState, AppStateStatus, Modal } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import Constants from 'expo-constants';
 import { LocationCard } from '../components/LocationCard';
 import { SpeedDisplay } from '../components/SpeedDisplay';
 import { StatisticsCard } from '../components/StatisticsCard';
@@ -39,6 +40,7 @@ export default function TrackingHomeScreen() {
     (state: RootState) => state.tracking
   );
   const [isOnline, setIsOnline] = useState(true);
+  const [isMapFullscreenVisible, setIsMapFullscreenVisible] = useState(false);
 
   const sessionRef = useRef(currentSession);
   const appState = useRef(AppState.currentState);
@@ -250,6 +252,10 @@ export default function TrackingHomeScreen() {
     latitude: point.latitude,
     longitude: point.longitude,
   }));
+  const configuredMapApiKey = (((Constants.expoConfig?.android as any)?.config?.googleMaps?.apiKey ?? '') as string).trim();
+  const isMapApiKeyConfigured =
+    configuredMapApiKey.length > 0 &&
+    configuredMapApiKey !== 'REPLACE_WITH_GOOGLE_MAPS_ANDROID_API_KEY';
   const liveRegion = currentLocation
     ? {
         latitude: currentLocation.latitude,
@@ -290,7 +296,15 @@ export default function TrackingHomeScreen() {
 
       {/* Live Map */}
       <View style={styles.mapCard}>
-        <Text style={styles.sectionTitle}>Live Map</Text>
+        <View style={styles.mapHeader}>
+          <Text style={styles.sectionTitle}>Live Map</Text>
+          <Pressable
+            style={styles.fullscreenButton}
+            onPress={() => setIsMapFullscreenVisible(true)}
+          >
+            <Text style={styles.fullscreenButtonText}>Full Screen</Text>
+          </Pressable>
+        </View>
         <MapView
           provider={PROVIDER_GOOGLE}
           style={styles.map}
@@ -316,10 +330,65 @@ export default function TrackingHomeScreen() {
             />
           )}
         </MapView>
+        {!isMapApiKeyConfigured && (
+          <Text style={[styles.mapHint, styles.mapHintWarning]}>
+            Map tiles are blank because the Android Google Maps API key is not configured locally.
+          </Text>
+        )}
         {!currentLocation && (
           <Text style={styles.mapHint}>Waiting for GPS location...</Text>
         )}
       </View>
+
+      <Modal
+        visible={isMapFullscreenVisible}
+        animationType="slide"
+        onRequestClose={() => setIsMapFullscreenVisible(false)}
+      >
+        <View style={styles.fullscreenContainer}>
+          <View style={styles.fullscreenHeader}>
+            <Text style={styles.fullscreenTitle}>Live Map</Text>
+            <Pressable
+              style={styles.fullscreenCloseButton}
+              onPress={() => setIsMapFullscreenVisible(false)}
+            >
+              <Text style={styles.fullscreenCloseText}>Close</Text>
+            </Pressable>
+          </View>
+
+          <MapView
+            provider={PROVIDER_GOOGLE}
+            style={styles.fullscreenMap}
+            region={liveRegion}
+            showsUserLocation
+            showsMyLocationButton
+            showsCompass
+          >
+            {routeCoordinates.length > 1 && (
+              <Polyline
+                coordinates={routeCoordinates}
+                strokeColor="#00D4FF"
+                strokeWidth={5}
+              />
+            )}
+            {currentLocation && (
+              <Marker
+                coordinate={{
+                  latitude: currentLocation.latitude,
+                  longitude: currentLocation.longitude,
+                }}
+                title="Current Position"
+              />
+            )}
+          </MapView>
+
+          {!isMapApiKeyConfigured && (
+            <Text style={styles.fullscreenHint}>
+              Configure a valid Android Google Maps API key locally to load map tiles.
+            </Text>
+          )}
+        </View>
+      </Modal>
 
       {/* Current Location Display */}
       {currentLocation && (
@@ -465,11 +534,29 @@ const styles = StyleSheet.create({
     padding: 12,
     marginVertical: 10,
   },
+  mapHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   sectionTitle: {
     color: '#ECF0F1',
     fontWeight: 'bold',
-    marginBottom: 10,
     fontSize: 16,
+  },
+  fullscreenButton: {
+    backgroundColor: '#223042',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#00D4FF',
+  },
+  fullscreenButtonText: {
+    color: '#00D4FF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   map: {
     height: 230,
@@ -479,6 +566,49 @@ const styles = StyleSheet.create({
     color: '#95A5A6',
     marginTop: 8,
     fontSize: 12,
+  },
+  mapHintWarning: {
+    color: '#F1C40F',
+  },
+  fullscreenContainer: {
+    flex: 1,
+    backgroundColor: '#101A24',
+    paddingTop: 50,
+  },
+  fullscreenHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  fullscreenTitle: {
+    color: '#ECF0F1',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  fullscreenCloseButton: {
+    backgroundColor: '#223042',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#95A5A6',
+  },
+  fullscreenCloseText: {
+    color: '#ECF0F1',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  fullscreenMap: {
+    flex: 1,
+  },
+  fullscreenHint: {
+    color: '#F1C40F',
+    fontSize: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#1A252F',
   },
   infoBox: {
     backgroundColor: '#34495E',
