@@ -2,7 +2,7 @@
   "expo": {
     "name": "SpeedTrack",
     "slug": "location-speed-tracker",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "description": "Real-time GPS tracking app with live speed monitoring, route recording, and comprehensive session analytics. Track your speed, location, altitude with metric/imperial units support.",
     "githubUrl": "https://github.com/shivarya/location-tracker",
     "orientation": "portrait",
@@ -15,7 +15,7 @@
     },
     "android": {
       "package": "com.shivarya.locationspeedtracker",
-      "versionCode": 11,
+      "versionCode": 12,
       "config": {
         "googleMaps": {
           "apiKey": "REPLACE_WITH_GOOGLE_MAPS_ANDROID_API_KEY"

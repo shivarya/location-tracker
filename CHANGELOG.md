@@ -5,6 +5,21 @@ All notable changes to Location & Speed Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2026-03-29
+
+### Added
+- Added environment-based local Google Maps Android API key workflow (`.env`/`.env.local`) to avoid committing secrets.
+- Added full-screen map mode from the Home screen.
+
+### Changed
+- Updated map key warning logic to use resolved runtime config status.
+- Bumped app version to 1.0.9 and Android versionCode to 12 for production build.
+
+### Google Play Notes
+- Added full-screen map option on the Home screen.
+- Improved Google Maps key configuration flow for more reliable map loading.
+- Internal release update for version 1.0.9.
+
 ## [1.0.8] - 2026-03-28
 
 ### Added
@@ -140,4 +155,4 @@ Fixed:
 - **Minor (1.X.0)**: New features, backwards compatible
 - **Patch (1.0.X)**: Bug fixes and minor improvements
 
-**Version Code**: Must increment by 1 for each Google Play upload (currently: 11)
+**Version Code**: Must increment by 1 for each Google Play upload (currently: 12)
