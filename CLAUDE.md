@@ -36,8 +36,7 @@ There is no test script.
 ## Configuration & Gotchas
 
 - **`app.config.js`** (not static app.json) injects `GOOGLE_MAPS_ANDROID_API_KEY` into the native config. **`eas.json`** defines development/preview/production build profiles.
-- **Google Maps key must be restricted** in Google Cloud to package `com.shivarya.locationspeedtracker` with your release/debug SHA fingerprints, or the map renders blank.
-- **`npm install --legacy-peer-deps` is required** (Expo Router + peer dep conflicts). A plain `npm install` may fail.
+- Maps key must be restricted to the package + SHA fingerprint (see `tracking-dev`/`tracking-release` skills) or the map renders blank.
 
 ## Environment Variables
 
