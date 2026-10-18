@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sessions live only on this device, so Android backup is their safety net: keep the Room database and settings,
+     skip caches (exports, map tiles). Big histories can pass the 25 MB cloud quota; the in-app ZIP backup covers that. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include
+            domain="database"
+            path="speedtrack.db" />
+        <include
+            domain="database"
+            path="speedtrack.db-wal" />
+        <include
+            domain="database"
+            path="speedtrack.db-shm" />
+        <include
+            domain="file"
+            path="datastore/" />
+    </cloud-backup>
+    <device-transfer>
+        <include
+            domain="database"
+            path="speedtrack.db" />
+        <include
+            domain="database"
+            path="speedtrack.db-wal" />
+        <include
+            domain="database"
+            path="speedtrack.db-shm" />
+        <include
+            domain="file"
+            path="datastore/" />
+    </device-transfer>
+</data-extraction-rules>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SpeedTrack mark on the 108dp adaptive-icon canvas: a speedometer arc whose needle is a GPS arrow.
+     Single colour, so it doubles as the themed-icon (monochrome) layer and the splash icon.
+     Master artwork: branding/speedtrack-icon.svg (keep in sync). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M36.38,71.78 A23,23,0,1,1,71.62,71.78"
+        android:strokeWidth="8"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+    <group
+        android:rotation="38"
+        android:scaleX="0.82"
+        android:scaleY="0.82"
+        android:translateX="54"
+        android:translateY="59">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M0,-18 L9.5,9 L0,4 L-9.5,9 Z"
+            android:strokeWidth="1.5"
+            android:strokeColor="#FFFFFF"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>

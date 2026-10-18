@@ -1,0 +1,12 @@
+<!-- SpeedTrack app icon, master artwork. 108×108 = the Android adaptive-icon canvas (the middle 72 units survive
+     any launcher mask). Android draws it from android/app/src/main/res/drawable/ic_launcher_foreground.xml on
+     @color/icon_background — keep those in sync with this file. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <rect width="108" height="108" fill="#1F5EFF"/>
+  <!-- 260° speedometer arc, gap at the bottom -->
+  <path d="M36.38,71.78 A23,23 0 1 1 71.62,71.78" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+  <!-- needle = GPS navigation arrow -->
+  <g transform="translate(54 59) rotate(38) scale(0.82)">
+    <path d="M0,-18 L9.5,9 L0,4 L-9.5,9 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+  </g>
+</svg>

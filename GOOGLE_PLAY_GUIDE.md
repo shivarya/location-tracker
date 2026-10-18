@@ -1,3 +1,12 @@
+> **2.0.0 (native app, 2026-10-18).** Everything below was written for the Expo app (≤ 1.0.9). For the native app
+> (`android/`) the release procedure and the Play Console changes it needs live in
+> `.claude/skills/tracking-release/SKILL.md`. In short: the app no longer requests background location (remove that
+> declaration and answer "No" for background location in Data safety); declare the `location` and `connectedDevice`
+> foreground-service types; submit the Health apps declaration for the Health Connect permissions; add health &
+> fitness data (heart rate, steps) to Data safety; follow Google's Maps SDK disclosure guidance; republish the privacy
+> policy; and refresh screenshots, the app icon and the feature graphic (new logo: `branding/play-icon-512.png`,
+> `branding/feature-graphic.png`).
+
 # Google Play Store Publishing Guide
 ## Location & Speed Tracker
 

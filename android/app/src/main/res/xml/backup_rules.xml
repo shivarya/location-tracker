@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and lower (fullBackupContent): same scope as data_extraction_rules.xml. -->
+<full-backup-content>
+    <include
+        domain="database"
+        path="speedtrack.db" />
+    <include
+        domain="database"
+        path="speedtrack.db-wal" />
+    <include
+        domain="database"
+        path="speedtrack.db-shm" />
+    <include
+        domain="file"
+        path="datastore/" />
+</full-backup-content>

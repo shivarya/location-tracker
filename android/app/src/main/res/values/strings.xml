@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">SpeedTrack</string>
+    <string name="channel_tracking">Live tracking</string>
+    <string name="channel_tracking_desc">Shows speed, distance and time while a session is recording.</string>
+    <string name="channel_alerts">Session alerts</string>
+    <string name="channel_alerts_desc">Reminders such as resuming an interrupted session.</string>
+    <string name="widget_description">Live speed and distance, with a start / stop button</string>
+    <string name="tile_label">SpeedTrack</string>
+    <string name="shortcut_drive">Start drive</string>
+    <string name="shortcut_run">Start run</string>
+    <string name="shortcut_hud">HUD mode</string>
+</resources>
