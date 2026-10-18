@@ -1,6 +1,6 @@
 ---
 name: tracking-dev
-description: Build, install and drive the native SpeedTrack (Location Tracker) app locally — Gradle, emulator, simulated GPS routes, the Expo-import test. Use to run/test tracking-app locally.
+description: Build, install and drive the native SpeedTrack (Location Tracker) app locally — Gradle, emulator, simulated GPS routes, the Expo-import test, testing on the user's phone. Use to run/test tracking-app locally.
 ---
 
 Run the native SpeedTrack app (`android/`) for development.
@@ -31,6 +31,24 @@ If a Gradle build stalls with little free RAM, `gradlew --stop` and retry.
 - Quick Settings tile: `adb shell cmd statusbar add-tile com.shivarya.locationspeedtracker/.widget.TrackingTileService`.
 - HUD: `adb shell am start -n com.shivarya.locationspeedtracker/.MainActivity --es open hud`.
 - Git Bash mangles `/data/...` and `/sdcard/...` paths: prefix commands with `MSYS_NO_PATHCONV=1`.
+- Emulator Bluetooth: `adb shell cmd bluetooth_manager enable|disable`. Rotate: `adb emu rotate`.
+- Screen recording (e.g. a Play declaration video): `adb shell screenrecord --time-limit 50 /sdcard/x.mp4` while a
+  script drives the app, then `adb pull`; ffmpeg (installed via Chocolatey) can add captions.
+- R8 release builds stall on this 16 GB PC while the emulator runs: `adb emu kill` first.
+
+## On the user's phone (Pixel 10)
+
+- With a phone and an emulator both attached, pass `adb -s <serial>` (or set `ANDROID_SERIAL`) on every command.
+- Keep the screen awake by tapping the status bar every ~20 s (`adb shell input tap 300 12`), **not** with key events.
+  A hardware key puts Compose into keyboard-focus mode, which scrolls screens to their first focusable item and
+  looks like a layout bug.
+- A sideloaded release APK is signed with the upload key, but Play installs are signed with Play's app-signing key.
+  Uninstall the sideloaded copy before installing from Play, and the other way round.
+- It's a personal phone: never touch calls, other apps or their notifications. Screenshots can show private
+  notifications, so keep them out of the repo. Ask before writing anything to the user's Health Connect, and leave
+  deleting it to them.
+- boAt Hub (the Iris watch app, 1.2.9) declares no Health Connect permissions, so watch heart rate can only arrive via
+  Google Fit, if at all. On 2026-10-18 the phone's Health Connect held no heart-rate data.
 
 ## Test the Expo import on a debug build
 

@@ -8,7 +8,7 @@ Tracker"). Public GitHub repo `shivarya/location-tracker` — keep keys, keystor
 
 | Path | What | Status |
 |------|------|--------|
-| `android/` | **Native Kotlin/Compose app** (2.0.0+) — the one that ships | Active |
+| `android/` | **Native Kotlin/Compose app** (2.0.0+) — the one that ships; 2.0.0 (versionCode 14) on Play closed testing since 2026-10-18 | Active |
 | `mobile/` | Expo / React Native app (≤ 1.0.9) | **Deprecated** — kept for reference and a rollback build until native testing is done; then delete it |
 | `branding/` | App logo masters (SVG) + rendered Play icon / feature graphic (`node branding/render.js mobile/node_modules`); see its README for the Android vectors to keep in sync | Active |
 | `website/` + root `index.html` / `privacy.html` / `terms.html` / `styles.css` / `script.js` | Landing page + privacy policy (root copies are the gh-pages ones) | Active |
@@ -17,7 +17,8 @@ Tracker"). Public GitHub repo `shivarya/location-tracker` — keep keys, keystor
 
 ## Claude Code skills (`.claude/skills/`)
 
-- `tracking-dev` — build, install and drive the native app (emulator GPS simulation, legacy-import test).
+- `tracking-dev` — build, install and drive the native app (emulator GPS simulation, legacy-import test, testing on
+  the user's phone).
 - `tracking-release` — changelog, version bump, signed AAB, R8 smoke + upgrade tests, Play closed testing via
   `play-deploy`. Has a short "legacy Expo" section at the end for a rollback build.
 
@@ -36,8 +37,9 @@ cd "c:\Users\Ash\Documents\Projects\apps\tracking-app\android" ; .\gradlew.bat :
 Local, gitignored config in `android/`: `local.properties` (`sdk.dir`, `MAPS_API_KEY=` — copied from the Expo
 `.env`), `keystore.properties` (→ `../location-tracker-release.keystore`), `debug.keystore` (the standard RN debug
 key, so the Maps key restriction that covered Expo dev builds still applies). Without `MAPS_API_KEY` the build warns
-and every map falls back to MapLibre. Version: `android/version.properties` (Expo 1.0.9 = versionCode 12; EAS's
-remote counter is stale at 4 — always check Play Console's highest code).
+and every map falls back to MapLibre. Version: `android/version.properties` (Expo 1.0.9 = versionCode 12; 13 is
+used up by a Play draft; native 2.0.0 = 14, so the next release is 15. EAS's remote counter is stale at 4 — always check
+Play Console's highest code).
 
 ### Architecture (`com.shivarya.locationspeedtracker`)
 
@@ -54,7 +56,7 @@ remote counter is stale at 4 — always check Play Console's highest code).
   `GnssMonitor` (satellites, NMEA DOP, TTFF), `LocationDoctor` (GPS doctor checks + one-tap fixes),
   `NetworkMonitor`.
 - `core/maps/` — `MapLibreSetup` (OpenFreeMap styles, UA + ≤4 parallel requests), `TileEstimator` (≤2 700 tiles /
-  50 MB per area — OpenFreeMap's offline terms), `OfflineRegions` (light + dark region per area). Maps go through
+  50 MB per area — OpenFreeMap's offline terms; per-zoom sizes are measured gzip bytes, low-zoom tiles are ~1 MB each), `OfflineRegions` (light + dark region per area). Maps go through
   `feature/map/TrackMap`: Google Maps online, MapLibre when offline or keyless (`MapEnvironment`).
 - `core/health/` — Health Connect write (idempotent `clientRecordId = "<session>/<kind>"`) and heart-rate backfill
   from watch apps (e.g. boAt via its companion app), `HealthSyncWorker` (now + again 3 h later).
@@ -71,12 +73,18 @@ remote counter is stale at 4 — always check Play Console's highest code).
 
 ### Gotchas
 
-- **Play declarations** for this build: foreground-service types `location` and `connectedDevice` (with a video),
-  Health apps declaration for the Health Connect permissions (approval needed before release), Data safety
-  (location, health & fitness, Maps SDK), and remove the old background-location declaration. See
-  `.claude/skills/tracking-release`.
-- Maps key must be restricted to the package + debug / upload / Play app-signing SHA-1s, or Google maps render blank
+- **Play declarations** (done 2026-10-18 for 2.0.0): foreground-service types `location` and `connectedDevice`
+  (each with an unlisted demo video), Health apps ("Activity and fitness" + reasons for `ACTIVITY_RECOGNITION` and
+  `READ_HEART_RATE`). A new FGS type or health permission needs those forms updated first, or Play refuses the commit
+  ("You must let us know whether your app uses any Foreground Service permissions"). The background-location
+  declaration stays until the internal track (1.0.5) is replaced. Details: `.claude/skills/tracking-release` §6.
+- Maps key is restricted to the package + debug (`5E:8F:…`), upload (`7E:80:…`) and Play app-signing
+  (`00:D3:33:E2:95:AE:38:26:AC:87:5C:83:B8:07:10:27:5B:95:7F:99`) SHA-1s; a missing one renders Google maps blank
   (MapLibre still works).
+- Offline areas: MapLibre's `completedResourceSize` includes the style's fonts/icons, which every area shares, and the
+  dark region reuses the light one's tile URLs. Sizes and the 50 MB stop use the light region's `completedTileSize`.
+- Landscape phones (window height < 480 dp) get a side rail instead of Material's short bottom bar (`AppScaffold`),
+  and the Track screen's dial is sized by the height — check landscape when changing either.
 - Glance widget, QS tile and the shortcut trampoline are the only background start paths; a QS tile click is *not* an
   Android 14 while-in-use exemption, hence the trampoline activity.
 - Health Connect sessions are end-exclusive: route points at exactly `endTime` make the insert throw.

@@ -5,7 +5,8 @@
 > foreground-service types; submit the Health apps declaration for the Health Connect permissions; add health &
 > fitness data (heart rate, steps) to Data safety; follow Google's Maps SDK disclosure guidance; republish the privacy
 > policy; and refresh screenshots, the app icon and the feature graphic (new logo: `branding/play-icon-512.png`,
-> `branding/feature-graphic.png`).
+> `branding/feature-graphic.png`). Status: 2.0.0 (14) went to closed testing on 2026-10-18 with the FGS and Health apps
+> declarations done; the background-location declaration stays until the internal track (1.0.5) is replaced.
 
 # Google Play Store Publishing Guide
 ## Location & Speed Tracker

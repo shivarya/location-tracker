@@ -6,6 +6,8 @@ key); previous sessions and the unit setting are imported on first launch.
 
 ## [2.0.0] - 2026-10-18
 
+versionCode 14 (13 was uploaded to a Play draft and never released).
+
 ### Added
 - **Native app** (Kotlin, Jetpack Compose, Material 3) — faster, smaller, works fully offline.
 - **Reliable recording**: a location foreground service keeps recording with the screen off; every point is saved as
