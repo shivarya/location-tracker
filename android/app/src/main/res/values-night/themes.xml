@@ -1,0 +1,4 @@
+<resources>
+    <!-- Dark window: dialogs, keyboard, text handles and the frame before Compose draws follow the system. -->
+    <style name="Theme.SpeedTrack" parent="android:Theme.Material.NoActionBar" />
+</resources>

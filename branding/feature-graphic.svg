@@ -1,0 +1,13 @@
+<!-- Google Play feature graphic, 1024×500. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500" width="1024" height="500">
+  <rect width="1024" height="500" fill="#1F5EFF"/>
+  <g transform="translate(-30 -32) scale(5.4)">
+    <path d="M36.38,71.78 A23,23 0 1 1 71.62,71.78" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+    <g transform="translate(54 59) rotate(38) scale(0.82)">
+      <path d="M0,-18 L9.5,9 L0,4 L-9.5,9 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+    </g>
+  </g>
+  <text x="458" y="236" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="84" font-weight="700" fill="#FFFFFF">SpeedTrack</text>
+  <text x="462" y="294" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="30" fill="#DCE6FF">GPS speedometer · route tracker</text>
+  <text x="462" y="336" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="30" fill="#DCE6FF">Offline maps · sensors · fitness</text>
+</svg>

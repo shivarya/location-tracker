@@ -1,106 +1,49 @@
-# Location Tracker - React Native GPS Tracking App
+# SpeedTrack — GPS speed tracker for Android
 
-A comprehensive real-time GPS tracking application built with React Native and Expo, designed to track live speed, altitude, latitude, longitude, and other geolocation data on Android devices.
+A native Android app (Kotlin, Jetpack Compose) for live speed, route recording and everything your phone's sensors
+can measure. Works fully offline. On Google Play as **Location & Speed Tracker** (`com.shivarya.locationspeedtracker`).
 
-## 🎯 Features
+## Features
 
-### Core Tracking Features
-- **Real-Time Speed Tracking**: Live speed monitoring with automatic conversion between metric (km/h) and imperial (mph) units
-- **GPS Coordinates**: High-precision latitude and longitude tracking
-- **Altitude Measurement**: Current elevation with metric/imperial conversion
-- **Heading & Direction**: Compass bearing and directional information
-- **GPS Accuracy**: Real-time accuracy indicator showing signal quality
-- **Data Points**: Capture multiple location data points during a session
+- **Live speed & recording** — big speedometer (speed or pace), distance, moving time, average / max speed, climb;
+  records in the background with the screen off; pause, laps, automatic km/mile splits, auto-pause.
+- **Maps** — Google Maps online; downloadable **offline maps** (OpenStreetMap via OpenFreeMap) used automatically
+  without a connection; speed- or elevation-coloured routes, replay.
+- **GPS doctor** — one-tap fixes for location settings (Google Location Accuracy, Wi-Fi / Bluetooth scanning, battery
+  saver), sky view of satellites, signal strength per constellation, DOP, time to first fix, dual-frequency check,
+  A-GPS refresh.
+- **Sensors** — G-force meter, lean angle, compass, barometric altitude & vertical speed, steps & cadence,
+  environment sensors, a list of every sensor on the phone.
+- **Fitness** — activity types, calories, heart-rate zones, Bluetooth heart-rate straps, **Health Connect** sync
+  (and heart rate from your watch's app).
+- **Performance timer** — 0–60 mph / 0–100 km/h, ¼ mile / 400 m, rolling and braking runs.
+- **Your data** — GPX / TCX / KML / CSV / JSON export, GPX import, full backup & restore. No account, no server,
+  no ads, no analytics.
+- **Quick access** — widget, Quick Settings tile, shortcuts, picture-in-picture, mirrored HUD mode.
+- Metric and imperial throughout; light and dark themes.
 
-### Session Management
-- **Session Recording**: Start/stop tracking sessions with automatic data collection
-- **Session History**: View all past tracking sessions with detailed statistics
-- **Session Statistics**: Duration, total distance, average/max/min speed calculations
-- **Session Deletion**: Remove unwanted sessions
-- **Data Export**: Export sessions in JSON or CSV formats for analysis
+## Repository layout
 
-### User Interface
-- **Dark Theme**: Eye-friendly dark interface optimized for mobile
-- **4-Tab Navigation**: Home, Tracking, History, and Settings screens
-- **Live Dashboard**: Real-time display of all tracking metrics
-- **Unit Toggle**: Quick switch between metric and imperial units
-- **Responsive Design**: Optimized for various Android screen sizes
+| Path | Contents |
+|------|----------|
+| `android/` | The app (Gradle project). See [`CLAUDE.md`](CLAUDE.md) for architecture and build notes. |
+| `mobile/` | The previous Expo / React Native app (≤ 1.0.9) — **deprecated**, kept until the native app finishes testing. |
+| `website/`, `index.html`, `privacy.html`, `terms.html` | Landing page and policies. |
+| [`PRIVACY_POLICY.md`](PRIVACY_POLICY.md) | Privacy policy. |
 
-### Data Persistence
-- **Local Storage**: All sessions saved to device using AsyncStorage
-- **Automatic Backups**: Sessions persisted automatically after tracking stops
-- **Preference Storage**: Unit preference retained across app sessions
+## Build
 
-## 🚀 Quick Start
+Requires JDK 17 and the Android SDK.
 
-### Prerequisites
-- Node.js v16+
-- Android Studio / Android SDK
-- Android device or emulator
-
-### Installation
-
-1. **Install Dependencies**
-```bash
-npm install --legacy-peer-deps
+```powershell
+cd android
+.\gradlew.bat :app:testDebugUnitTest :app:installDebug
 ```
 
-2. **Start Development Server**
-```bash
-npm start
-```
+Put `MAPS_API_KEY=...` (a Google Maps Android key) in `android/local.properties` for Google maps; without it the app
+uses OpenStreetMap maps everywhere. Release signing reads `android/keystore.properties` (not in the repo).
 
-3. **Configure Google Maps Key (Local Only)**
-```bash
-cp .env.example .env.local
-```
-Then set `GOOGLE_MAPS_ANDROID_API_KEY` in `.env.local`.
+## Map data
 
-4. **Run on Android**
-```bash
-npm run android
-```
-
-If map tiles appear blank, verify the key is restricted in Google Cloud for package `com.shivarya.locationspeedtracker` and your release/debug SHA fingerprints.
-
-## 📋 Project Structure
-
-```
-LocationTracker/
-├── src/
-│   ├── screens/          # UI screens
-│   ├── components/       # Reusable components
-│   ├── services/         # LocationService, StorageService
-│   ├── store/           # Redux state management
-│   └── utils/           # Utilities & conversions
-├── app/
-│   ├── (tabs)/          # Tab navigation
-│   └── _layout.tsx      # Root with Redux
-├── SETUP_GUIDE.md       # Detailed setup instructions
-└── package.json         # Dependencies
-```
-
-## 📱 Screens
-
-- **Home Screen**: Welcome and start tracking
-- **Tracking Screen**: Live GPS data display
-- **History Screen**: Past sessions management
-- **Settings Screen**: Preferences and info
-
-## 🔧 Technical Stack
-
-- React Native 0.81.5
-- Expo 54.0.23
-- TypeScript 5.9.2
-- Redux 4.2.1
-- Expo Location 18.0.1
-- AsyncStorage 1.23.1
-
-## 📖 Documentation
-
-- **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Installation and run instructions
-- **[PROJECT_PLAN.md](../PROJECT_PLAN.md)** - Detailed architecture
-
----
-
-**Ready to track your movement? Start the app and begin tracking!**
+Online maps © Google. Offline maps © OpenStreetMap contributors, © OpenMapTiles, served by
+[OpenFreeMap](https://openfreemap.org).

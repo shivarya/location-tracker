@@ -74,6 +74,11 @@
             text-decoration: underline;
         }
     </style>
+    <style>
+        .policy-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }
+        .policy-table th, .policy-table td { border: 1px solid rgba(127,140,141,.35); padding: .5rem .6rem; text-align: left; vertical-align: top; }
+        .policy-table th { background: rgba(0,212,255,.08); }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -98,221 +103,132 @@
         <a href="index.html" class="back-link">← Back to Home</a>
 
         <h1>Privacy Policy</h1>
-        
+
         <div class="policy-meta">
-            <p><strong>Effective Date:</strong> November 18, 2025</p>
-            <p><strong>Last Updated:</strong> November 18, 2025</p>
+            <p><strong>Effective Date:</strong> October 18, 2026</p>
+            <p><strong>Last Updated:</strong> October 18, 2026 (version 2.0)</p>
             <p><strong>Developer:</strong> Shivarya</p>
             <p><strong>Contact:</strong> contact@shivarya.dev</p>
         </div>
 
         <div class="highlight-box">
             <h3>In Plain English</h3>
-            <p>✅ We collect GPS location data<br>
-            ✅ Data stays on YOUR device only<br>
-            ✅ No servers, no cloud, no sharing<br>
-            ✅ You control everything<br>
-            ✅ Delete anytime<br>
-            ✅ Export anytime<br>
-            ✅ No ads, no tracking<br>
-            ✅ Completely private</p>
+            <p>✅ No account, no SpeedTrack server<br>
+            ✅ Your sessions stay on your phone<br>
+            ✅ Maps load tiles from Google / OpenFreeMap<br>
+            ✅ Health Connect sync only if you turn it on<br>
+            ✅ Delete, export or back up anytime<br>
+            ✅ No ads, no analytics</p>
         </div>
 
         <h2>Introduction</h2>
-        <p>This Privacy Policy describes how Location & Speed Tracker ("we", "our", "the app") collects, uses, and protects your information when you use our mobile application.</p>
 
-        <h2>Information We Collect</h2>
-        
-        <h3>Location Data</h3>
-        <p>The app collects GPS location data to provide its core functionality:</p>
+        <p>This Privacy Policy describes how Location &amp; Speed Tracker ("SpeedTrack", "the app") handles your information.</p>
+
+        <p><strong>Developer</strong>: Shivarya <strong>Website</strong>: https://shivarya.dev <strong>Contact</strong>: contact@shivarya.dev</p>
+
+        <p><strong>In short:</strong> SpeedTrack has no account and no server of its own. Everything it records stays on your phone unless you export it, back it up, or turn on Health Connect sync. It shows no ads and contains no analytics or tracking SDKs.</p>
+
+        <h2>Information the app uses</h2>
+
+        <p>All of the following is processed and stored <strong>only on your device</strong>.</p>
+
+        <h3>Location</h3>
+
         <ul>
-            <li><strong>Real-time GPS coordinates</strong> (latitude, longitude)</li>
-            <li><strong>Altitude</strong> information</li>
-            <li><strong>Speed</strong> measurements</li>
-            <li><strong>Heading/direction</strong> data</li>
-            <li><strong>Location accuracy</strong> metrics</li>
-            <li><strong>Timestamps</strong> for each data point</li>
+            <li>GPS / GNSS position (latitude, longitude), altitude, speed, heading, accuracy and timestamps.</li>
+            <li>Satellite status (number of satellites, signal strength) for the GPS doctor.</li>
+            <li>Used to show live speed, record sessions and routes, and compute statistics.</li>
+            <li>Location is used <strong>only while you use the app or while a recording you started is running</strong> (shown by an ongoing notification). The app does not request background location access.</li>
         </ul>
 
-        <h3>Purpose of Collection</h3>
-        <p>Location data is collected solely for:</p>
+        <h3>Motion and environment sensors</h3>
+
         <ul>
-            <li>Real-time speed display and monitoring</li>
-            <li>Location tracking during active sessions</li>
-            <li>Session recording and history</li>
-            <li>Distance and route calculations</li>
-            <li>Statistics generation (average speed, max speed, total distance)</li>
+            <li>Accelerometer, gyroscope, magnetometer (compass), barometer, and — where your phone has them — light, temperature and humidity sensors. Used for the G-force meter, lean angle, compass, barometric altitude and the Sensors screen, and recorded with sessions.</li>
         </ul>
 
-        <h2>How We Use Your Information</h2>
+        <h3>Physical activity</h3>
 
-        <h3>Local Storage Only</h3>
-        <p><strong>All data is stored locally on your device.</strong> We do not:</p>
         <ul>
-            <li>❌ Transmit location data to external servers</li>
-            <li>❌ Upload your data to the cloud</li>
-            <li>❌ Share your data with third parties</li>
-            <li>❌ Sell or monetize your location information</li>
+            <li>Step count, cadence and the activity Google Play services detects (walking, running, cycling, in a vehicle). Requires the "Physical activity" permission, which is optional.</li>
         </ul>
 
-        <h3>Data Usage</h3>
-        <p>Your location data is used exclusively within the app to:</p>
-        <ol>
-            <li>Display current speed in real-time</li>
-            <li>Show GPS coordinates and altitude</li>
-            <li>Record tracking sessions</li>
-            <li>Calculate session statistics (distance, speeds, duration)</li>
-            <li>Provide session history</li>
-            <li>Enable data export functionality</li>
-        </ol>
+        <h3>Heart rate</h3>
 
-        <h2>Data Storage & Retention</h2>
         <ul>
-            <li><strong>Storage:</strong> All data is stored using Android's local storage (AsyncStorage)</li>
-            <li><strong>Retention:</strong> Data persists until you manually delete it</li>
-            <li><strong>Control:</strong> You have full control to delete individual sessions or all data at any time</li>
+            <li>From a Bluetooth heart-rate sensor you pair, or read from Health Connect (see below). Optional.</li>
         </ul>
 
-        <h2>Data Sharing</h2>
-        <p><strong>We do not share your data with anyone.</strong> Specifically:</p>
+        <h3>Profile</h3>
+
         <ul>
-            <li>❌ No data transmission to external servers</li>
-            <li>❌ No third-party analytics or tracking</li>
-            <li>❌ No advertising networks</li>
-            <li>❌ No social media integrations</li>
-            <li>❌ No cloud backup services</li>
-            <li>❌ No data sales or monetization</li>
+            <li>Weight, height, year of birth, sex and heart-rate settings you choose to enter, used only to estimate calories and heart-rate zones.</li>
         </ul>
 
-        <h3>Data Export</h3>
-        <p>The app provides export functionality (JSON/CSV format) that allows YOU to export your own data for personal use. This is entirely under your control.</p>
+        <h2>What leaves your device, and when</h2>
+
+        <p>SpeedTrack itself never sends your recorded data anywhere. Some features use third-party services as part of their normal operation:</p>
+
+        <table class="policy-table">
+            <tr><th>Feature</th><th>Service</th><th>What is sent</th></tr>
+            <tr><td>Online maps</td><td>Google Maps SDK for Android (Google)</td><td>Map tile requests for the area you view, with your IP address and device information, as for any Google Maps app. Governed by <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>.</td></tr>
+            <tr><td>Offline maps &amp; maps without Google</td><td>OpenFreeMap (tiles.openfreemap.org)</td><td>Standard web requests for map tiles of the area you view or download, with your IP address and an app identifier. No account or identifier of yours.</td></tr>
+            <tr><td>Location accuracy</td><td>Google Play services (fused location provider)</td><td>When Google Location Accuracy is on in your phone's settings, Google uses Wi-Fi, Bluetooth and mobile-network signals to improve location — this is a phone setting governed by Google.</td></tr>
+            <tr><td>Naming offline map areas</td><td>Android's Geocoder</td><td>The centre point of an area you are about to download, to suggest a place name.</td></tr>
+            <tr><td>Health Connect (optional, off by default)</td><td>Health Connect, on your device</td><td>Finished workouts (exercise session with route, distance, steps, calories, elevation, speed, heart rate) are written to Health Connect; heart rate recorded by other apps during your sessions is read from it. Health Connect is an Android component on your phone — data you share there is then available to other apps *you* allow.</td></tr>
+            <tr><td>Backups</td><td>Android Backup (your Google account), or a file you save</td><td>Android may back up the app's data to your Google account (encrypted, managed by Google). In-app backups are files saved wherever you choose.</td></tr>
+            <tr><td>Export / share</td><td>Apps you choose</td><td>Files (GPX, TCX, KML, CSV, JSON) you explicitly export or share.</td></tr>
+        </table>
+
+        <h2>Health Connect</h2>
+
+        <p>If you turn on Health Connect, SpeedTrack uses the Health Connect permissions you grant only to:</p>
+
+        <ul>
+            <li><strong>Write</strong> the workouts you record in SpeedTrack, and</li>
+            <li><strong>Read</strong> heart-rate data for the time of your SpeedTrack sessions, to show it with those sessions.</li>
+        </ul>
+
+        <p>Health data is never used for advertising, never sold, never shared with third parties, and never used for anything other than these features. You can revoke access at any time in Health Connect settings. SpeedTrack's use of information received from Health Connect adheres to the Health Connect Permissions policy, including the Limited Use requirements.</p>
 
         <h2>Permissions</h2>
 
-        <h3>Required Permissions</h3>
-        <p>The app requires the following Android permissions:</p>
+        <table class="policy-table">
+            <tr><th>Permission</th><th>Why</th></tr>
+            <tr><td>Precise / approximate location</td><td>Speed and route recording (while in use only)</td></tr>
+            <tr><td>Foreground service (location, connected device)</td><td>Keep recording, and keep a heart-rate sensor connected, with the screen off</td></tr>
+            <tr><td>Notifications</td><td>Show the recording notification with pause / lap / stop</td></tr>
+            <tr><td>Physical activity (optional)</td><td>Steps, cadence and activity detection</td></tr>
+            <tr><td>Nearby devices / Bluetooth (optional)</td><td>Find and connect a Bluetooth heart-rate sensor — never used to infer location</td></tr>
+            <tr><td>Health Connect (optional)</td><td>Write workouts, read heart rate</td></tr>
+            <tr><td>Network / Wi-Fi state</td><td>Download maps; the GPS doctor checks whether Wi-Fi scanning is on</td></tr>
+        </table>
 
-        <ol>
-            <li>
-                <strong>ACCESS_FINE_LOCATION</strong>
-                <ul>
-                    <li>Purpose: Obtain precise GPS coordinates</li>
-                    <li>Usage: Real-time speed and location tracking</li>
-                </ul>
-            </li>
-            <li>
-                <strong>ACCESS_COARSE_LOCATION</strong>
-                <ul>
-                    <li>Purpose: Approximate location as fallback</li>
-                    <li>Usage: Basic location services</li>
-                </ul>
-            </li>
-            <li>
-                <strong>ACCESS_BACKGROUND_LOCATION</strong> (Optional)
-                <ul>
-                    <li>Purpose: Continue tracking when app is in background</li>
-                    <li>Usage: Uninterrupted session recording</li>
-                    <li>Note: This permission is optional and requested only when needed</li>
-                </ul>
-            </li>
-        </ol>
+        <h2>Storage, retention and deletion</h2>
 
-        <h3>Permission Control</h3>
-        <p>You can revoke location permissions at any time through:</p>
         <ul>
-            <li>Android Settings → Apps → Location & Speed Tracker → Permissions</li>
-            <li>Revoking permissions will prevent the app from tracking but won't delete existing data</li>
+            <li>Sessions and settings are stored in the app's private storage on your device.</li>
+            <li>Data stays until you delete it: delete a session (with undo), delete all sessions in Settings, or uninstall the app. Data you exported, backed up or wrote to Health Connect is managed where you put it.</li>
         </ul>
 
-        <h2>Your Rights & Control</h2>
-        <p>You have complete control over your data:</p>
+        <h2>Children</h2>
 
-        <h3>View Your Data</h3>
-        <ul>
-            <li>Access all recorded sessions in the History tab</li>
-            <li>View detailed statistics for each session</li>
-            <li>See all location points collected</li>
-        </ul>
+        <p>The app is not directed at children under 13 and does not knowingly collect information from them.</p>
 
-        <h3>Delete Your Data</h3>
-        <ul>
-            <li>Delete individual sessions</li>
-            <li>Clear all data with one tap</li>
-            <li>Data deletion is immediate and permanent</li>
-        </ul>
+        <h2>Changes</h2>
 
-        <h3>Export Your Data</h3>
-        <ul>
-            <li>Export sessions as JSON format</li>
-            <li>Export sessions as CSV format</li>
-            <li>Use exported data however you wish</li>
-        </ul>
+        <p>We may update this policy; changes are shown by the "Last Updated" date above.</p>
 
-        <h2>Children's Privacy</h2>
-        <p>This app is not intended for children under 13 years of age. We do not knowingly collect personal information from children. The app is rated for ages 13+ in app stores.</p>
+        <h2>Contact</h2>
 
-        <h2>Security</h2>
-        <p>We take security seriously:</p>
-        <ul>
-            <li>Data is stored locally using Android's secure storage mechanisms</li>
-            <li>No network transmission reduces security risks</li>
-            <li>No user accounts or passwords required</li>
-            <li>No cloud storage vulnerabilities</li>
-        </ul>
-
-        <h2>Changes to This Privacy Policy</h2>
-        <p>We may update this Privacy Policy from time to time. Changes will be reflected by updating the "Last Updated" date at the top of this policy.</p>
-        <p>Continued use of the app after changes constitutes acceptance of the updated policy.</p>
-
-        <h2>No Ads or Monetization</h2>
-        <p>This app:</p>
-        <ul>
-            <li>Contains no advertisements</li>
-            <li>Has no in-app purchases</li>
-            <li>Does not sell user data</li>
-            <li>Does not use tracking for monetization</li>
-        </ul>
-
-        <h2>Third-Party Services</h2>
-        <p>The app uses the following technical frameworks:</p>
-        <ul>
-            <li><strong>React Native & Expo:</strong> Mobile app framework</li>
-            <li><strong>Expo Location API:</strong> For accessing device GPS</li>
-            <li><strong>AsyncStorage:</strong> For local data storage</li>
-        </ul>
-        <p>None of these services transmit your personal data externally.</p>
-
-        <h2>Data Breach Notification</h2>
-        <p>Since all data is stored locally on your device and never transmitted, there is no risk of server-side data breaches. Your data security depends on your device's security.</p>
-
-        <h2>Contact Us</h2>
-        <p>If you have questions or concerns about this Privacy Policy:</p>
-        <ul>
-            <li><strong>Website:</strong> <a href="https://shivarya.dev" target="_blank">https://shivarya.dev</a></li>
-            <li><strong>Email:</strong> <a href="mailto:contact@shivarya.dev">contact@shivarya.dev</a></li>
-            <li><strong>GitHub:</strong> <a href="https://github.com/shivarya/location-tracker" target="_blank">https://github.com/shivarya/location-tracker</a></li>
-        </ul>
-
-        <h2>Legal Compliance</h2>
-        <p>This app complies with:</p>
-        <ul>
-            <li>GDPR (General Data Protection Regulation) - EU</li>
-            <li>CCPA (California Consumer Privacy Act) - USA</li>
-            <li>Google Play Store data safety requirements</li>
-            <li>Android privacy best practices</li>
-        </ul>
-
-        <div class="policy-meta" style="margin-top: 3rem;">
-            <p><strong>Last Updated:</strong> November 18, 2025</p>
-            <p><strong>Version:</strong> 1.0.0</p>
-            <p><strong>Developer:</strong> Shivarya (<a href="https://shivarya.dev" target="_blank">https://shivarya.dev</a>)</p>
-        </div>
+        <p><strong>Email</strong>: contact@shivarya.dev <strong>Website</strong>: https://shivarya.dev <strong>Source code</strong>: https://github.com/shivarya/location-tracker</p>
     </div>
 
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2025 Shivarya. All rights reserved.</p>
+                <p>&copy; 2026 Shivarya. All rights reserved.</p>
                 <p><a href="index.html">Back to Home</a> • <a href="terms.html">Terms of Service</a></p>
             </div>
         </div>

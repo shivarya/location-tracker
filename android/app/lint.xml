@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Deliberate: targetSdk stays 36 until Android 17 (API 37) behaviour changes are tested;
+         compileSdk is already 37. -->
+    <issue id="OldTargetApi" severity="informational" />
+    <!-- Kotlin 2.4 needs a matching KSP release before the toolchain can move; tracked manually. -->
+    <issue id="NewerVersionAvailable" severity="informational" />
+    <issue id="GradleDependency" severity="informational" />
+    <issue id="AndroidGradlePluginVersion" severity="informational" />
+    <!-- MapLibre pulls in Timber (and its lint checks); this app logs with android.util.Log on purpose. -->
+    <issue id="LogNotTimber" severity="ignore" />
+    <!-- Auto-enter is enabled (API 31+) only while recording; the PiP view is the whole activity, so there is no
+         sub-rect to hint at. -->
+    <issue id="PictureInPictureIssue" severity="ignore" />
+</lint>

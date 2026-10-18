@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the launcher icon. Starting goes through StartTrackingActivity so the location service
+     starts from a visible activity (required for while-in-use location on Android 14+). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_drive"
+        android:shortcutId="start_drive"
+        android:shortcutShortLabel="@string/shortcut_drive">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.shivarya.locationspeedtracker.widget.StartTrackingActivity"
+            android:targetPackage="com.shivarya.locationspeedtracker">
+            <extra
+                android:name="activity"
+                android:value="drive" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_run"
+        android:shortcutId="start_run"
+        android:shortcutShortLabel="@string/shortcut_run">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.shivarya.locationspeedtracker.widget.StartTrackingActivity"
+            android:targetPackage="com.shivarya.locationspeedtracker">
+            <extra
+                android:name="activity"
+                android:value="run" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_hud"
+        android:shortcutId="hud"
+        android:shortcutShortLabel="@string/shortcut_hud">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.shivarya.locationspeedtracker.MainActivity"
+            android:targetPackage="com.shivarya.locationspeedtracker">
+            <extra
+                android:name="open"
+                android:value="hud" />
+        </intent>
+    </shortcut>
+</shortcuts>
