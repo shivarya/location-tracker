@@ -33,4 +33,11 @@ class UnitsTest {
         assertEquals("NE", Format.compass(44.0))
         assertEquals("N", Format.compass(359.0))
     }
+
+    @Test
+    fun `no minus zero for values that round to zero`() {
+        assertEquals(0.0.fmt(0), (-0.3).fmt(0))
+        assertEquals(0.0.fmt(1), (-0.04).fmt(1))
+        assertEquals((-1.0).fmt(0), (-1.2).fmt(0))
+    }
 }

@@ -2,6 +2,7 @@ package com.shivarya.locationspeedtracker.core.units
 
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -158,4 +159,8 @@ object Format {
     }
 }
 
-fun Double.fmt(decimals: Int): String = String.format(Locale.getDefault(), "%.${decimals}f", this)
+/** Fixed decimals; a small negative that rounds to zero prints as "0", not "-0" (e.g. vertical speed at rest). */
+fun Double.fmt(decimals: Int): String {
+    val v = if ((this * 10.0.pow(decimals)).roundToLong() == 0L) 0.0 else this
+    return String.format(Locale.getDefault(), "%.${decimals}f", v)
+}

@@ -81,7 +81,7 @@ class SensorRecorder @Inject constructor(private val hub: SensorHub) : SessionAd
     /** Zero the lean angle at the current mount position. */
     fun calibrateLean() = synchronized(lock) {
         val g = session?.readings?.gravity ?: return@synchronized
-        leanZero = MotionMath.lean(g)
+        MotionMath.lean(g)?.let { leanZero = it }
     }
 
     override fun onStart(ctx: AddonContext) = synchronized(lock) {
@@ -129,9 +129,9 @@ class SensorRecorder @Inject constructor(private val hub: SensorHub) : SessionAd
             }
             Sensor.TYPE_STEP_DETECTOR -> cadence.onStep(t)
             Sensor.TYPE_GRAVITY -> r.gravity?.let { g ->
-                val l = MotionMath.lean(g) - leanZero
+                val l = MotionMath.lean(g)?.let { MotionMath.angleDelta(it, leanZero) }
                 lean = l
-                if (!paused) maxLean = max(maxLean, abs(l))
+                if (!paused && l != null) maxLean = max(maxLean, abs(l))
             }
             Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_ACCELEROMETER -> if (!paused && motionEnabled) {
                 val w = r.worldLinear

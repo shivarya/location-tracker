@@ -55,6 +55,15 @@ class SensorsAndFitnessTest {
     }
 
     @Test
+    fun `lean angle - upright, banked, unknown when lying flat`() {
+        assertEquals(0f, MotionMath.lean(floatArrayOf(0f, 9.81f, 0f))!!, 0.01f)
+        assertEquals(30f, MotionMath.lean(floatArrayOf(4.905f, 8.496f, 0f))!!, 0.1f)
+        assertNull(MotionMath.lean(floatArrayOf(0.3f, 0.2f, 9.8f)))
+        assertEquals(-170f, MotionMath.angleDelta(175f, -15f), 0.01f)
+        assertEquals(20f, MotionMath.angleDelta(10f, -10f), 0.01f)
+    }
+
+    @Test
     fun `barometric altitude and calibration`() {
         assertEquals(0f, MotionMath.pressureAltitude(1013.25f), 0.01f)
         assertEquals(110.9f, MotionMath.pressureAltitude(1000f), 0.5f)
@@ -100,5 +109,9 @@ class SensorsAndFitnessTest {
         // ~20 × 20 km around Bengaluru fits; all of India doesn't.
         assertTrue(TileEstimator.fits(Bounds(12.88, 77.50, 13.06, 77.68)))
         assertFalse(TileEstimator.fits(Bounds(8.0, 68.0, 35.0, 97.0)))
+        // The ~10 × 9 km area the per-zoom sizes were measured on: 56 tiles, 5,138 KiB downloaded (vector + relief).
+        val measured = Bounds(12.99, 77.70, 13.07, 77.81)
+        assertEquals(56L, TileEstimator.tiles(measured))
+        assertEquals(5_138.0, TileEstimator.estimatedBytes(measured) / 1024.0, 40.0)
     }
 }

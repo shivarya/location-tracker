@@ -13,6 +13,7 @@ import com.shivarya.locationspeedtracker.core.data.db.MetricEntity
 import com.shivarya.locationspeedtracker.core.data.db.PerfRunEntity
 import com.shivarya.locationspeedtracker.core.data.db.SessionEntity
 import com.shivarya.locationspeedtracker.core.data.db.TrackPointEntity
+import com.shivarya.locationspeedtracker.core.model.ActivityType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -199,7 +200,7 @@ class ExportManager @Inject constructor(
         if (s == null) return stamp()
         val date = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date(s.startTime))
         val label = s.name?.lowercase(Locale.US)?.replace(Regex("[^a-z0-9]+"), "-")?.trim('-')?.take(40)
-        return if (label.isNullOrEmpty()) "$date-${s.activity}" else "$date-$label"
+        return if (label.isNullOrEmpty()) "$date-${ActivityType.from(s.activity).label.lowercase(Locale.US)}" else "$date-$label"
     }
 }
 

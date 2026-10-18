@@ -40,7 +40,10 @@ data class OfflineArea(
     val name: String,
     val bounds: Bounds,
     val createdAt: Long,
-    val completedBytes: Long,
+    /** Tiles downloaded for this area (the light region; the dark one reuses the same tile URLs). */
+    val tileBytes: Long,
+    /** Style, fonts and icons — shared by every area, so counted once in totals. */
+    val sharedBytes: Long,
     val completedResources: Long,
     val requiredResources: Long,
     val complete: Boolean,
@@ -149,9 +152,15 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
                 when {
                     status.isComplete -> {
                         setActive(t, false)
+                        Log.i(
+                            TAG,
+                            "${meta.name} (${if (meta.dark) "dark" else "light"}) ready: ${status.completedTileCount} tiles, " +
+                                "${status.completedTileSize} B tiles, ${status.completedResourceSize} B in all",
+                        )
                         if (!meta.dark) startDarkCompanion(meta)
                     }
-                    status.completedResourceSize > TileEstimator.MAX_BYTES * 11 / 10 -> {
+                    // Tiles only: fonts and icons are shared with every other area, not part of this download's size.
+                    status.completedTileSize > TileEstimator.MAX_BYTES * 11 / 10 -> {
                         setActive(t, false)
                         t.error = "Stopped at the 50 MB per-area limit — choose a smaller area"
                     }
@@ -206,7 +215,8 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
                 name = m.name,
                 bounds = Bounds(m.south, m.west, m.north, m.east),
                 createdAt = m.created,
-                completedBytes = parts.sumOf { it.status?.completedResourceSize ?: 0 },
+                tileBytes = light.status?.completedTileSize ?: 0,
+                sharedBytes = light.status?.let { it.completedResourceSize - it.completedTileSize } ?: 0,
                 completedResources = parts.sumOf { it.status?.completedResourceCount ?: 0 },
                 requiredResources = parts.sumOf { it.status?.requiredResourceCount ?: 0 },
                 complete = parts.size >= 2 && parts.all { it.status?.isComplete == true },

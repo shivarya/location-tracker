@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -53,6 +54,8 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
+private val DIAL_MAX = 260.dp
+
 @Composable
 fun SensorsScreen(vm: SensorsViewModel = hiltViewModel()) {
     val ui by vm.ui.collectAsStateWithLifecycle()
@@ -77,7 +80,10 @@ fun SensorsScreen(vm: SensorsViewModel = hiltViewModel()) {
             item {
                 SectionCard(title = "G-force") {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        GMeter(ui, Modifier.weight(1f).aspectRatio(1f))
+                        // Capped so the dial doesn't fill the screen with the phone in landscape.
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            GMeter(ui, Modifier.widthIn(max = DIAL_MAX).aspectRatio(1f))
+                        }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(0.8f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             GLabel("Now", "%.2f g".format(kotlin.math.hypot(ui.gNow.long, ui.gNow.lat)))
@@ -98,7 +104,9 @@ fun SensorsScreen(vm: SensorsViewModel = hiltViewModel()) {
             item {
                 SectionCard(title = "Orientation") {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Compass(ui.headingDeg, Modifier.weight(1f).aspectRatio(1f))
+                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            Compass(ui.headingDeg, Modifier.widthIn(max = DIAL_MAX).aspectRatio(1f))
+                        }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(ui.headingDeg?.let { "${Format.compass(it)} ${it.toInt()}°" } ?: "–", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)

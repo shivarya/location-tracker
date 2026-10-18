@@ -56,9 +56,17 @@ object MotionMath {
 
     /**
      * Lean (bank) angle for a phone mounted upright on handlebars or a dash: rotation about the forward axis,
-     * from gravity in the device plane. 0 = upright, + = leaning right.
+     * from gravity in the device plane. 0 = upright, + = leaning right. Null when the phone is closer to flat than to
+     * upright (under half of gravity in the screen plane) — the angle would be sensor noise.
      */
-    fun lean(gravity: FloatArray): Float = Math.toDegrees(atan2(gravity[0].toDouble(), gravity[1].toDouble())).toFloat()
+    fun lean(gravity: FloatArray): Float? {
+        val (x, y, z) = Triple(gravity[0], gravity[1], gravity[2])
+        if (hypot(x, y) < 0.5f * sqrt(x * x + y * y + z * z)) return null
+        return Math.toDegrees(atan2(x.toDouble(), y.toDouble())).toFloat()
+    }
+
+    /** [a] − [b] in degrees, folded into −180..180. */
+    fun angleDelta(a: Float, b: Float): Float = (a - b + 540f) % 360f - 180f
 
     /** International barometric formula (same as SensorManager.getAltitude). */
     fun pressureAltitude(hpa: Float, seaLevelHpa: Float = STANDARD_PRESSURE_HPA): Float =

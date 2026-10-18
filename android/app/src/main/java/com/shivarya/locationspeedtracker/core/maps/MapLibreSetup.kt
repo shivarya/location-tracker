@@ -54,8 +54,14 @@ object TileEstimator {
     /** OpenFreeMap's per-download cap is 3 000 tiles; leave room for style, sprite, glyph and relief tiles. */
     const val MAX_TILES = 2_700
     const val MAX_BYTES = 50L * 1024 * 1024
-    /** Rough mean size of an OpenMapTiles vector tile (urban z14 tiles are larger, rural/low-zoom smaller). */
-    private const val AVG_TILE_BYTES = 16_000L
+
+    /**
+     * Mean bytes per tile and zoom in KiB, as downloaded (gzip-compressed OpenMapTiles vector tile, plus the liberty
+     * style's Natural Earth relief image up to z6). Measured on OpenFreeMap over suburban Bengaluru in October 2026
+     * and checked against what MapLibre stored on a Pixel 10. The few low-zoom tiles are the heavy ones (a z2 tile is
+     * ~1 MB), so even a small area costs ~4 MB.
+     */
+    private val TILE_KIB = intArrayOf(226, 314, 951, 862, 308, 249, 257, 111, 89, 109, 66, 60, 54, 37, 31)
 
     fun x(lon: Double, z: Int): Int = floor((lon + 180.0) / 360.0 * (1 shl z)).toInt().coerceIn(0, (1 shl z) - 1)
 
@@ -64,13 +70,13 @@ object TileEstimator {
         return floor((1.0 - ln(tan(r) + 1.0 / cos(r)) / PI) / 2.0 * (1 shl z)).toInt().coerceIn(0, (1 shl z) - 1)
     }
 
-    fun tiles(b: Bounds, minZoom: Int = 0, maxZoom: Int = MAX_ZOOM): Long = (minZoom..maxZoom).sumOf { z ->
-        val dx = (x(b.east, z) - x(b.west, z) + 1).toLong()
-        val dy = (y(b.south, z) - y(b.north, z) + 1).toLong()
-        dx * dy
-    }
+    fun tiles(b: Bounds, minZoom: Int = 0, maxZoom: Int = MAX_ZOOM): Long = (minZoom..maxZoom).sumOf { z -> tilesAt(b, z) }
 
-    fun estimatedBytes(tiles: Long) = tiles * AVG_TILE_BYTES
+    private fun tilesAt(b: Bounds, z: Int): Long =
+        (x(b.east, z) - x(b.west, z) + 1).toLong() * (y(b.south, z) - y(b.north, z) + 1)
 
-    fun fits(b: Bounds) = tiles(b).let { it <= MAX_TILES && estimatedBytes(it) <= MAX_BYTES }
+    /** Tile bytes one download of [b] fetches. The dark style reuses the same tiles, so it adds almost nothing. */
+    fun estimatedBytes(b: Bounds): Long = (0..MAX_ZOOM).sumOf { z -> tilesAt(b, z) * TILE_KIB[z] * 1024L }
+
+    fun fits(b: Bounds) = tiles(b) <= MAX_TILES && estimatedBytes(b) <= MAX_BYTES
 }

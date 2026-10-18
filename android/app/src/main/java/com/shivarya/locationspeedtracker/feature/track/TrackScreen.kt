@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -260,17 +261,32 @@ fun TrackScreen(nav: TrackNav, vm: TrackViewModel = hiltViewModel()) {
             val map: @Composable () -> Unit = {
                 MapCard(ui, follow = follow, onFollow = { follow = it }, onExpand = nav.openMap)
             }
+            val activityPicker: @Composable () -> Unit = {
+                if (active == null) {
+                    ActivitySelector(ui.activity, vm::select)
+                    ui.suggestion?.let { sug ->
+                        AssistChip(
+                            onClick = { vm.select(sug) },
+                            label = { Text("Looks like ${sug.label.lowercase()} — switch?") },
+                            leadingIcon = { Icon(sug.icon, contentDescription = null) },
+                        )
+                    }
+                }
+            }
             if (wide) {
                 Row(Modifier.fillMaxSize().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Column(Modifier.weight(0.42f).fillMaxSize(), verticalArrangement = Arrangement.Center) {
-                        gauge(Modifier.fillMaxWidth())
+                    // No fill modifier: the square dial then shrinks to whichever side is shorter (the height, on a phone).
+                    Box(Modifier.weight(0.42f).fillMaxHeight().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                        gauge(Modifier)
                     }
                     Column(
                         Modifier.weight(0.58f).verticalScroll(rememberScrollState()).padding(vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         notices()
+                        activityPicker()
                         Stats(ui, columns = 3)
+                        ui.live.lastSplit?.let { SplitBanner(it, ui.settings.unitSystem, ui.activity) }
                         map()
                     }
                 }
@@ -280,16 +296,7 @@ fun TrackScreen(nav: TrackNav, vm: TrackViewModel = hiltViewModel()) {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     notices()
-                    if (active == null) {
-                        ActivitySelector(ui.activity, vm::select)
-                        ui.suggestion?.let { sug ->
-                            AssistChip(
-                                onClick = { vm.select(sug) },
-                                label = { Text("Looks like ${sug.label.lowercase()} — switch?") },
-                                leadingIcon = { Icon(sug.icon, contentDescription = null) },
-                            )
-                        }
-                    }
+                    activityPicker()
                     gauge(Modifier.fillMaxWidth(0.82f).align(Alignment.CenterHorizontally).widthIn(max = 420.dp))
                     Stats(ui, columns = 3)
                     ui.live.lastSplit?.let { SplitBanner(it, ui.settings.unitSystem, ui.activity) }

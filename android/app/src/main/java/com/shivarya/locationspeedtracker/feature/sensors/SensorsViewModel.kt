@@ -123,7 +123,7 @@ class SensorsViewModel @Inject constructor(
     }
 
     fun zeroLean() {
-        session?.readings?.gravity?.let { leanZero = MotionMath.lean(it) }
+        session?.readings?.gravity?.let { g -> MotionMath.lean(g)?.let { leanZero = it } }
     }
 
     private fun publish(stepsOk: Boolean) {
@@ -152,7 +152,7 @@ class SensorsViewModel @Inject constructor(
             headingDeg = facing,
             pitch = tilt?.first,
             roll = tilt?.second,
-            lean = r.gravity?.let { MotionMath.lean(it) - leanZero },
+            lean = r.gravity?.let { g -> MotionMath.lean(g)?.let { MotionMath.angleDelta(it, leanZero) } },
             baroAltM = baro.altitude,
             verticalSpeed = baro.smoothed?.let { baro.verticalSpeed },
             gpsAltM = f?.altitudeMsl ?: f?.altitude,

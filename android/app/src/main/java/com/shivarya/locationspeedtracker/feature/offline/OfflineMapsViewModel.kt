@@ -42,7 +42,7 @@ data class OfflineUi(
     val suggestedName: String = "",
     val online: Boolean = true,
 ) {
-    val totalBytes get() = areas.sumOf { it.completedBytes }
+    val totalBytes get() = areas.sumOf { it.tileBytes } + (areas.maxOfOrNull { it.sharedBytes } ?: 0)
 }
 
 @HiltViewModel
@@ -75,7 +75,7 @@ class OfflineMapsViewModel @Inject constructor(
 
     fun onBounds(b: Bounds) {
         val tiles = TileEstimator.tiles(b)
-        selection.value = Selection(b, tiles, TileEstimator.estimatedBytes(tiles), TileEstimator.fits(b))
+        selection.value = Selection(b, tiles, TileEstimator.estimatedBytes(b), TileEstimator.fits(b))
         viewModelScope.launch { name.value = placeName(b) ?: defaultName() }
     }
 

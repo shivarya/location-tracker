@@ -134,6 +134,13 @@ fun OfflineMapsScreen(onBack: () -> Unit, vm: OfflineMapsViewModel = hiltViewMod
                     if (sel != null) {
                         val color = if (sel.fits) MaterialTheme.colorScheme.onSurface else SpeedTrackTheme.signal.bad
                         Text("≈ ${"%,d".format(sel.tiles)} tiles · ≈ ${mb(sel.bytes)}", style = MaterialTheme.typography.titleMedium, color = color)
+                        if (ui.areas.isEmpty()) {
+                            Text(
+                                "Your first download also fetches the map's fonts and icons, shared by every area.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                         if (!sel.fits) {
                             Text(
                                 "Too big for one download (max ${"%,d".format(TileEstimator.MAX_TILES)} tiles / ${mb(TileEstimator.MAX_BYTES)}). Zoom in, or download it in parts.",
@@ -193,8 +200,8 @@ private fun AreaRow(a: OfflineArea, onShow: () -> Unit, onPause: () -> Unit, onR
                     Text(a.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     val status = when {
                         a.error != null -> a.error
-                        a.complete -> "Ready offline · ${mb(a.completedBytes)}"
-                        a.downloading -> "Downloading ${(a.progress * 100).toInt()}% · ${mb(a.completedBytes)}"
+                        a.complete -> "Ready offline · ${mb(a.tileBytes)}"
+                        a.downloading -> "Downloading ${(a.progress * 100).toInt()}% · ${mb(a.tileBytes)}"
                         else -> "Paused at ${(a.progress * 100).toInt()}%"
                     }
                     Text(

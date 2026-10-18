@@ -26,6 +26,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.window.core.layout.WindowSizeClass
 import com.shivarya.locationspeedtracker.feature.gps.GpsDoctorScreen
 import com.shivarya.locationspeedtracker.feature.health.HealthScreen
 import com.shivarya.locationspeedtracker.feature.history.HistoryScreen
@@ -69,8 +70,14 @@ fun AppScaffold(newIntents: SharedFlow<Intent>, initialIntent: Intent?, startupM
     }
 
     val fullScreen = FullScreenRoutes.any { destination?.hasRoute(it) == true }
-    val layoutType = if (fullScreen) NavigationSuiteType.None
-    else NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfo())
+    val adaptiveInfo = currentWindowAdaptiveInfo()
+    val layoutType = when {
+        fullScreen -> NavigationSuiteType.None
+        // A phone on its side (often in a car mount): a bottom bar would take a fifth of the height, so use a rail.
+        !adaptiveInfo.windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND) ->
+            NavigationSuiteType.WideNavigationRailCollapsed
+        else -> NavigationSuiteScaffoldDefaults.navigationSuiteType(adaptiveInfo)
+    }
 
     val showMessage: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
     val back: () -> Unit = { nav.popBackStack() }
