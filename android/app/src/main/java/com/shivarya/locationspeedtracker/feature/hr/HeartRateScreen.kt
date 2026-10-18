@@ -33,6 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -109,6 +110,7 @@ class HeartRateViewModel @Inject constructor(
 fun HeartRateScreen(onBack: () -> Unit, vm: HeartRateViewModel = hiltViewModel()) {
     val state by vm.monitor.state.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
+    val bluetoothOn by remember { vm.monitor.bluetoothOnFlow() }.collectAsStateWithLifecycle(vm.monitor.bluetoothOn)
     val context = LocalContext.current
     LifecycleResumeEffect(settings.hrDeviceAddress) {
         vm.onVisible()
@@ -134,7 +136,7 @@ fun HeartRateScreen(onBack: () -> Unit, vm: HeartRateViewModel = hiltViewModel()
                 NoticeCard("No Bluetooth LE", "This phone can't connect to Bluetooth heart-rate sensors.", Icons.Filled.Bluetooth)
                 return@Column
             }
-            if (!vm.monitor.bluetoothOn) {
+            if (!bluetoothOn) {
                 NoticeCard(
                     "Bluetooth is off", "Turn on Bluetooth to connect your sensor.", Icons.Filled.Bluetooth,
                     action = { Button(onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }) { Text("Bluetooth settings") } },
@@ -153,7 +155,7 @@ fun HeartRateScreen(onBack: () -> Unit, vm: HeartRateViewModel = hiltViewModel()
                         onClick = {
                             if (vm.monitor.hasPermissions()) vm.monitor.startScan() else permissions.launch(vm.monitor.permissions().toTypedArray())
                         },
-                        enabled = !state.scanning && vm.monitor.bluetoothOn,
+                        enabled = !state.scanning && bluetoothOn,
                     ) { Text(if (state.scanning) "Scanning…" else "Scan") }
                     if (state.scanning) {
                         Spacer(Modifier.width(12.dp))

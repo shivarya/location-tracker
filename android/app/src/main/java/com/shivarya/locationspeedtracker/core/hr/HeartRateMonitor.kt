@@ -2,6 +2,7 @@ package com.shivarya.locationspeedtracker.core.hr
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
@@ -13,7 +14,10 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
@@ -21,7 +25,11 @@ import android.os.Looper
 import android.os.ParcelUuid
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -101,6 +109,20 @@ class HeartRateMonitor @Inject constructor(@param:ApplicationContext private val
     } else listOf(Manifest.permission.ACCESS_FINE_LOCATION)
 
     val bluetoothOn: Boolean get() = runCatching { adapter?.isEnabled == true }.getOrDefault(false)
+
+    /** [bluetoothOn], live: users usually switch Bluetooth on from Quick Settings with this app still on screen. */
+    fun bluetoothOnFlow(): Flow<Boolean> = callbackFlow {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context, intent: Intent) {
+                trySend(bluetoothOn)
+            }
+        }
+        ContextCompat.registerReceiver(
+            context, receiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        trySend(bluetoothOn)
+        awaitClose { context.unregisterReceiver(receiver) }
+    }.distinctUntilChanged()
 
     // ---- Scanning ------------------------------------------------------------------------------------------------
 
