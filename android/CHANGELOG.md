@@ -49,12 +49,12 @@ key); previous sessions and the unit setting are imported on first launch.
 ### Google Play Notes
 ```
 SpeedTrack 2.0 — rebuilt from the ground up as a native app.
-• Works fully offline, with downloadable offline maps
-• GPS doctor: fix signal problems in one tap, see your satellites
-• Sensors: G-force, lean angle, compass, barometric altitude, steps
+• Works offline, with downloadable maps
+• GPS doctor: one-tap signal fixes, see your satellites
+• Sensors: G-force, lean angle, compass, barometer, steps
 • Heart-rate straps and Health Connect (watch heart rate too)
 • Performance timer: 0–60 / 0–100, quarter mile, braking
 • Export GPX/TCX/KML/CSV, import GPX, full backup
 • Widget, Quick Settings tile, picture-in-picture, HUD mode
-Your existing sessions are carried over automatically.
+Your existing sessions carry over automatically.
 ```
