@@ -1,5 +1,7 @@
 package com.shivarya.locationspeedtracker.feature.map
 
+import android.annotation.SuppressLint
+import android.view.MotionEvent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -74,7 +76,10 @@ fun MapLibreTrackMap(
     val accent = MaterialTheme.colorScheme.primary
     val mapView = remember {
         MapLibreSetup.ensure(context)
-        MapView(context).also { it.onCreate(null) }
+        MapView(context).also {
+            it.onCreate(null)
+            if (gesturesEnabled) it.keepGesturesFromParent()
+        }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, mapView) {
@@ -218,6 +223,19 @@ fun MapLibreTrackMap(
     }
 
     AndroidView(factory = { mapView }, modifier = modifier)
+}
+
+/**
+ * Stops a scrolling parent (LazyColumn, verticalScroll) from taking over a drag or pinch that starts on the map.
+ * Without it, a two-finger zoom that drifts up or down becomes a page scroll and the pinch is cancelled.
+ */
+@SuppressLint("ClickableViewAccessibility") // Only watches touches; the MapView still handles and announces them.
+internal fun MapView.keepGesturesFromParent() = setOnTouchListener { v, e ->
+    when (e.actionMasked) {
+        MotionEvent.ACTION_DOWN -> v.parent?.requestDisallowInterceptTouchEvent(true)
+        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> v.parent?.requestDisallowInterceptTouchEvent(false)
+    }
+    false
 }
 
 private fun applyZoomCap(m: MapLibreMap, areas: List<OfflineArea>?) {

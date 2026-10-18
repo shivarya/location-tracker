@@ -20,11 +20,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -62,13 +65,16 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shivarya.locationspeedtracker.core.geo.Bounds
 import com.shivarya.locationspeedtracker.core.geo.LatLon
+import com.shivarya.locationspeedtracker.core.maps.MapDetail
 import com.shivarya.locationspeedtracker.core.maps.MapLibreSetup
 import com.shivarya.locationspeedtracker.core.maps.OfflineArea
-import com.shivarya.locationspeedtracker.core.maps.MapDetail
 import com.shivarya.locationspeedtracker.core.maps.TileEstimator
+import com.shivarya.locationspeedtracker.feature.map.keepGesturesFromParent
 import com.shivarya.locationspeedtracker.ui.components.NoticeCard
 import com.shivarya.locationspeedtracker.ui.components.SectionCard
 import com.shivarya.locationspeedtracker.ui.theme.SpeedTrackTheme
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
@@ -86,6 +92,8 @@ fun OfflineMapsScreen(onBack: () -> Unit, vm: OfflineMapsViewModel = hiltViewMod
     var name by rememberSaveable { mutableStateOf("") }
     var nameEdited by rememberSaveable { mutableStateOf(false) }
     var flyTo by remember { mutableStateOf<Bounds?>(null) }
+    // +/- buttons: pinching a map inside a scrolling page is fiddly, so the picker also zooms in whole steps.
+    val zoomSteps = remember { MutableSharedFlow<Double>(extraBufferCapacity = 8) }
     LaunchedEffect(ui.suggestedName) { if (!nameEdited) name = ui.suggestedName }
 
     Scaffold(
@@ -120,6 +128,7 @@ fun OfflineMapsScreen(onBack: () -> Unit, vm: OfflineMapsViewModel = hiltViewMod
                     AreaPicker(
                         start = start,
                         flyTo = flyTo,
+                        zoomSteps = zoomSteps,
                         onBounds = vm::onBounds,
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -132,6 +141,10 @@ fun OfflineMapsScreen(onBack: () -> Unit, vm: OfflineMapsViewModel = hiltViewMod
                                 .fillMaxSize()
                                 .border(BorderStroke(3.dp, if (fits) MaterialTheme.colorScheme.primary else SpeedTrackTheme.signal.bad), RoundedCornerShape(8.dp)),
                         )
+                    }
+                    Column(Modifier.align(Alignment.BottomEnd).padding(8.dp)) {
+                        FilledTonalIconButton(onClick = { zoomSteps.tryEmit(1.0) }) { Icon(Icons.Filled.Add, contentDescription = "Zoom in") }
+                        FilledTonalIconButton(onClick = { zoomSteps.tryEmit(-1.0) }) { Icon(Icons.Filled.Remove, contentDescription = "Zoom out") }
                     }
                 }
             }
@@ -255,13 +268,16 @@ private fun mb(bytes: Long) = String.format(Locale.getDefault(), "%.1f MB", byte
 
 /** A plain MapLibre map that reports the geographic box under the selection frame whenever the camera settles. */
 @Composable
-private fun AreaPicker(start: LatLon?, flyTo: Bounds?, onBounds: (Bounds) -> Unit, modifier: Modifier) {
+private fun AreaPicker(start: LatLon?, flyTo: Bounds?, zoomSteps: SharedFlow<Double>, onBounds: (Bounds) -> Unit, modifier: Modifier) {
     val context = LocalContext.current
     val density = LocalDensity.current.density
     val report by rememberUpdatedState(onBounds)
     val mapView = remember {
         MapLibreSetup.ensure(context)
-        MapView(context).also { it.onCreate(null) }
+        MapView(context).also {
+            it.onCreate(null)
+            it.keepGesturesFromParent()
+        }
     }
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -309,6 +325,10 @@ private fun AreaPicker(start: LatLon?, flyTo: Bounds?, onBounds: (Bounds) -> Uni
         if (centred) return@LaunchedEffect
         centred = true
         m.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(s.lat, s.lon), 11.5))
+    }
+    LaunchedEffect(map) {
+        val m = map ?: return@LaunchedEffect
+        zoomSteps.collect { m.animateCamera(CameraUpdateFactory.zoomBy(it), 250) }
     }
     LaunchedEffect(map, flyTo) {
         val m = map ?: return@LaunchedEffect

@@ -11,11 +11,13 @@ versionCode 15.
 ### Added
 - Offline maps: choose how much detail to download — **Streets**, **Roads** or **Overview**. Overview covers a whole
   country for flights (all of India is about 25 MB); when an area is too big, SpeedTrack suggests the level that fits.
+- Zoom buttons on the offline-area map.
 
 ### Fixed
 - The keyboard no longer covers the area name and Download button on the Offline maps screen, or the fields on the
   Profile screen.
 - Offline, maps stay at a zoom the downloaded area can draw instead of going blank when zoomed in.
+- Pinch-zooming or panning a map inside a scrolling screen no longer turns into a page scroll.
 - An offline area's dark-mode copy could start downloading twice.
 
 ### Google Play Notes
@@ -23,6 +25,7 @@ versionCode 15.
 SpeedTrack 2.0.1
 • Offline maps: pick the detail level. "Overview" fits a whole country for flights (all of India in about 25 MB)
 • Offline maps stay visible when you zoom in without a connection
+• Easier zooming: zoom buttons, and pinch no longer scrolls the page
 • The keyboard no longer covers text boxes
 ```
 
