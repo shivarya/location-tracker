@@ -18,6 +18,9 @@ import org.maplibre.android.offline.OfflineRegion
 import org.maplibre.android.offline.OfflineRegionError
 import org.maplibre.android.offline.OfflineRegionStatus
 import org.maplibre.android.offline.OfflineTilePyramidRegionDefinition
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,6 +36,8 @@ data class AreaMeta(
     val west: Double,
     val north: Double,
     val east: Double,
+    /** Deepest zoom downloaded ([MapDetail]); areas from before detail levels went to [TileEstimator.MAX_ZOOM]. */
+    val maxZoom: Int = TileEstimator.MAX_ZOOM,
 )
 
 data class OfflineArea(
@@ -40,6 +45,7 @@ data class OfflineArea(
     val name: String,
     val bounds: Bounds,
     val createdAt: Long,
+    val detail: MapDetail,
     /** Tiles downloaded for this area (the light region; the dark one reuses the same tile URLs). */
     val tileBytes: Long,
     /** Style, fonts and icons — shared by every area, so counted once in totals. */
@@ -51,6 +57,21 @@ data class OfflineArea(
     val error: String?,
 ) {
     val progress: Float get() = if (requiredResources > 0) (completedResources.toFloat() / requiredResources).coerceIn(0f, 1f) else 0f
+}
+
+/**
+ * Deepest zoom the downloaded areas can draw at [lat]/[lon], or null where none covers it. Offline, MapLibre draws
+ * nothing past an area's last level, so maps stay just under the next one (an Overview area stops below z8).
+ */
+fun offlineZoomCap(areas: List<OfflineArea>, lat: Double, lon: Double): Double? =
+    areas.filter { it.complete && lat in it.bounds.south..it.bounds.north && lon in it.bounds.west..it.bounds.east }
+        .maxOfOrNull { it.detail.maxZoom }
+        ?.let { it + 0.99 }
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface OfflineRegionsEntryPoint {
+    fun offlineRegions(): OfflineRegions
 }
 
 /**
@@ -89,15 +110,18 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
         })
     }
 
-    fun download(name: String, bounds: Bounds) = onMain {
+    fun download(name: String, bounds: Bounds, detail: MapDetail) = onMain {
         val group = UUID.randomUUID().toString()
-        create(AreaMeta(group, name, dark = false, System.currentTimeMillis(), bounds.south, bounds.west, bounds.north, bounds.east), start = true)
+        create(
+            AreaMeta(group, name, dark = false, System.currentTimeMillis(), bounds.south, bounds.west, bounds.north, bounds.east, detail.maxZoom),
+            start = true,
+        )
     }
 
     private fun create(meta: AreaMeta, start: Boolean) {
         val b = LatLngBounds.Builder().include(LatLng(meta.south, meta.west)).include(LatLng(meta.north, meta.east)).build()
         val def = OfflineTilePyramidRegionDefinition(
-            MapLibreSetup.style(meta.dark), b, 0.0, TileEstimator.MAX_ZOOM.toDouble(), context.resources.displayMetrics.density,
+            MapLibreSetup.style(meta.dark), b, 0.0, meta.maxZoom.toDouble(), context.resources.displayMetrics.density,
         )
         manager.createOfflineRegion(def, json.encodeToString(AreaMeta.serializer(), meta).toByteArray(), object : OfflineManager.CreateOfflineRegionCallback {
             override fun onCreate(offlineRegion: OfflineRegion) {
@@ -118,11 +142,14 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
     }
 
     fun resume(group: String) = onMain {
-        // Resume the light region if unfinished, else the dark one.
+        // Resume the light region if unfinished, else the dark one; start the dark one if it was never created.
         val parts = tracked.values.filter { it.meta.group == group }.sortedBy { it.meta.dark }
-        parts.firstOrNull { it.status?.isComplete != true }?.let {
-            it.error = null
-            setActive(it, true)
+        val unfinished = parts.firstOrNull { it.status?.isComplete != true }
+        if (unfinished != null) {
+            unfinished.error = null
+            setActive(unfinished, true)
+        } else if (parts.none { it.meta.dark }) {
+            parts.firstOrNull()?.let { startDarkCompanion(it.meta) }
         }
         publish()
     }
@@ -148,9 +175,11 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
         tracked[r.id] = t
         r.setObserver(object : OfflineRegion.OfflineRegionObserver {
             override fun onStatusChanged(status: OfflineRegionStatus) {
+                // MapLibre reports "complete" more than once; act on the first, or the dark copy starts twice.
+                val justCompleted = status.isComplete && t.status?.isComplete != true
                 t.status = status
                 when {
-                    status.isComplete -> {
+                    status.isComplete -> if (justCompleted) {
                         setActive(t, false)
                         Log.i(
                             TAG,
@@ -215,6 +244,7 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
                 name = m.name,
                 bounds = Bounds(m.south, m.west, m.north, m.east),
                 createdAt = m.created,
+                detail = MapDetail.forZoom(m.maxZoom),
                 tileBytes = light.status?.completedTileSize ?: 0,
                 sharedBytes = light.status?.let { it.completedResourceSize - it.completedTileSize } ?: 0,
                 completedResources = parts.sumOf { it.status?.completedResourceCount ?: 0 },

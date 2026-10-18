@@ -18,9 +18,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shivarya.locationspeedtracker.core.maps.MapLibreSetup
+import com.shivarya.locationspeedtracker.core.maps.OfflineArea
+import com.shivarya.locationspeedtracker.core.maps.OfflineRegionsEntryPoint
+import com.shivarya.locationspeedtracker.core.maps.offlineZoomCap
 import com.shivarya.locationspeedtracker.core.tracking.Fix
 import com.shivarya.locationspeedtracker.core.tracking.TrackSample
+import dagger.hilt.android.EntryPointAccessors
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
@@ -43,6 +48,8 @@ private const val SRC_ROUTE = "st-route"
 private const val SRC_POS = "st-pos"
 private const val SRC_PTS = "st-pts"
 private const val IMG_ARROW = "st-arrow"
+/** MapLibre's own default maximum zoom. */
+private const val MAX_MAP_ZOOM = 25.5
 
 /**
  * The offline renderer: MapLibre with OpenFreeMap vector tiles — from downloaded areas when there is no connection,
@@ -93,6 +100,13 @@ fun MapLibreTrackMap(
     var loaded by remember { mutableStateOf<Style?>(null) }
     val panCallback by rememberUpdatedState(onUserPan)
 
+    // Offline, keep the zoom within what the downloaded areas hold at the camera target, or the map goes blank.
+    val offline = !LocalMapEnvironment.current.online
+    val regions = remember { EntryPointAccessors.fromApplication(context.applicationContext, OfflineRegionsEntryPoint::class.java).offlineRegions() }
+    LaunchedEffect(offline) { if (offline) regions.load() }
+    val areas by regions.areas.collectAsStateWithLifecycle()
+    val capAreas by rememberUpdatedState(if (offline) areas else null)
+
     LaunchedEffect(mapView) {
         mapView.getMapAsync { m ->
             m.uiSettings.apply {
@@ -103,10 +117,14 @@ fun MapLibreTrackMap(
             m.addOnCameraMoveStartedListener { reason ->
                 if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) panCallback()
             }
+            m.addOnCameraIdleListener { applyZoomCap(m, capAreas) }
             val first = current?.let { LatLng(it.lat, it.lon) } ?: chunks.firstOrNull()?.firstOrNull()?.let { LatLng(it.lat, it.lon) }
             m.moveCamera(CameraUpdateFactory.newLatLngZoom(first ?: LatLng(20.0, 78.0), if (first != null) 15.5 else 3.0))
             map = m
         }
+    }
+    LaunchedEffect(map, capAreas) {
+        map?.let { applyZoomCap(it, capAreas) }
     }
     LaunchedEffect(map, dark) {
         val m = map ?: return@LaunchedEffect
@@ -200,6 +218,11 @@ fun MapLibreTrackMap(
     }
 
     AndroidView(factory = { mapView }, modifier = modifier)
+}
+
+private fun applyZoomCap(m: MapLibreMap, areas: List<OfflineArea>?) {
+    val t = m.cameraPosition.target ?: return
+    m.setMaxZoomPreference(areas?.let { offlineZoomCap(it, t.latitude, t.longitude) } ?: MAX_MAP_ZOOM)
 }
 
 /** Route as short coloured LineStrings (~8 points each) — MapLibre colours per feature, not per vertex. */

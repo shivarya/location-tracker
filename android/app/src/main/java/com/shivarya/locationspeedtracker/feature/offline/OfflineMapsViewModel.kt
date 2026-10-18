@@ -12,6 +12,7 @@ import com.shivarya.locationspeedtracker.core.geo.LatLon
 import com.shivarya.locationspeedtracker.core.location.LocationPermissions
 import kotlinx.coroutines.tasks.await
 import com.shivarya.locationspeedtracker.core.location.NetworkMonitor
+import com.shivarya.locationspeedtracker.core.maps.MapDetail
 import com.shivarya.locationspeedtracker.core.maps.OfflineArea
 import com.shivarya.locationspeedtracker.core.maps.OfflineRegions
 import com.shivarya.locationspeedtracker.core.maps.TileEstimator
@@ -34,11 +35,19 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlin.coroutines.resume
 
-data class Selection(val bounds: Bounds, val tiles: Long, val bytes: Long, val fits: Boolean)
+data class Selection(
+    val bounds: Bounds,
+    val tiles: Long,
+    val bytes: Long,
+    val fits: Boolean,
+    /** When it doesn't fit: the most detailed lower level that would, if any. */
+    val fitsAt: MapDetail?,
+)
 
 data class OfflineUi(
     val areas: List<OfflineArea> = emptyList(),
     val selection: Selection? = null,
+    val detail: MapDetail = MapDetail.Streets,
     val suggestedName: String = "",
     val online: Boolean = true,
 ) {
@@ -53,13 +62,15 @@ class OfflineMapsViewModel @Inject constructor(
     engine: TrackingEngine,
 ) : ViewModel() {
     private val selection = MutableStateFlow<Selection?>(null)
+    private val detail = MutableStateFlow(MapDetail.Streets)
+    private var bounds: Bounds? = null
     private val name = MutableStateFlow("")
     /** Where the picker opens: the recorder's fix, else the last known location. */
     private val _start = MutableStateFlow<LatLon?>(engine.state.value.fix?.let { LatLon(it.lat, it.lon) })
     val start: StateFlow<LatLon?> = _start
 
-    val ui: StateFlow<OfflineUi> = combine(regions.areas, selection, name, network.online) { a, s, n, online ->
-        OfflineUi(a, s, n, online)
+    val ui: StateFlow<OfflineUi> = combine(regions.areas, selection, detail, name, network.online) { a, s, d, n, online ->
+        OfflineUi(a, s, d, n, online)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OfflineUi())
 
     init {
@@ -74,15 +85,28 @@ class OfflineMapsViewModel @Inject constructor(
     }
 
     fun onBounds(b: Bounds) {
-        val tiles = TileEstimator.tiles(b)
-        selection.value = Selection(b, tiles, TileEstimator.estimatedBytes(b), TileEstimator.fits(b))
+        bounds = b
+        select(b)
         viewModelScope.launch { name.value = placeName(b) ?: defaultName() }
+    }
+
+    fun setDetail(d: MapDetail) {
+        detail.value = d
+        bounds?.let(::select)
+    }
+
+    private fun select(b: Bounds) {
+        val z = detail.value.maxZoom
+        val fits = TileEstimator.fits(b, z)
+        val fitsAt = if (fits) null
+        else MapDetail.entries.filter { it.maxZoom < z && TileEstimator.fits(b, it.maxZoom) }.maxByOrNull { it.maxZoom }
+        selection.value = Selection(b, TileEstimator.tiles(b, 0, z), TileEstimator.estimatedBytes(b, z), fits, fitsAt)
     }
 
     fun download(label: String) {
         val s = selection.value ?: return
         if (!s.fits) return
-        regions.download(label.ifBlank { defaultName() }, s.bounds)
+        regions.download(label.ifBlank { defaultName() }, s.bounds, detail.value)
     }
 
     fun pause(a: OfflineArea) = regions.pause(a.group)

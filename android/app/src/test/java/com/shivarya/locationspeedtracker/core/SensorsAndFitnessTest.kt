@@ -5,6 +5,9 @@ import com.shivarya.locationspeedtracker.core.fitness.HrZones
 import com.shivarya.locationspeedtracker.core.geo.Bounds
 import com.shivarya.locationspeedtracker.core.hr.HrParser
 import com.shivarya.locationspeedtracker.core.location.Nmea
+import com.shivarya.locationspeedtracker.core.maps.MapDetail
+import com.shivarya.locationspeedtracker.core.maps.OfflineArea
+import com.shivarya.locationspeedtracker.core.maps.offlineZoomCap
 import com.shivarya.locationspeedtracker.core.maps.TileEstimator
 import com.shivarya.locationspeedtracker.core.model.ActivityType
 import com.shivarya.locationspeedtracker.core.sensors.BaroAltimeter
@@ -113,5 +116,32 @@ class SensorsAndFitnessTest {
         val measured = Bounds(12.99, 77.70, 13.07, 77.81)
         assertEquals(56L, TileEstimator.tiles(measured))
         assertEquals(5_138.0, TileEstimator.estimatedBytes(measured) / 1024.0, 40.0)
+    }
+
+    @Test
+    fun `detail levels - all of India fits as an overview, not with more detail`() {
+        val india = Bounds(6.5, 68.0, 35.7, 97.5)
+        assertTrue(TileEstimator.fits(india, MapDetail.Overview.maxZoom))
+        assertFalse(TileEstimator.fits(india, MapDetail.Roads.maxZoom))
+        assertFalse(TileEstimator.fits(india))
+        // A Bengaluru-to-Kolar region (~110 × 70 km) is too big street by street but fits with roads only.
+        val region = Bounds(12.7, 77.3, 13.35, 78.3)
+        assertFalse(TileEstimator.fits(region))
+        assertTrue(TileEstimator.fits(region, MapDetail.Roads.maxZoom))
+        assertEquals(MapDetail.Overview, MapDetail.forZoom(7))
+        assertEquals(MapDetail.Streets, MapDetail.forZoom(13))
+    }
+
+    @Test
+    fun `offline zoom cap follows the most detailed downloaded area at the spot`() {
+        fun area(b: Bounds, d: MapDetail, complete: Boolean = true) =
+            OfflineArea("g", "a", b, 0, d, 0, 0, 0, 0, complete, downloading = false, error = null)
+        val india = area(Bounds(6.5, 68.0, 35.7, 97.5), MapDetail.Overview)
+        val city = area(Bounds(12.9, 77.5, 13.1, 77.7), MapDetail.Streets)
+        val areas = listOf(india, city)
+        assertEquals(14.99, offlineZoomCap(areas, 13.0, 77.6)!!, 1e-9)  // inside the city area
+        assertEquals(7.99, offlineZoomCap(areas, 19.07, 72.88)!!, 1e-9)  // Mumbai: overview only
+        assertNull(offlineZoomCap(areas, 51.5, -0.12))                  // London: nothing downloaded
+        assertNull(offlineZoomCap(listOf(area(india.bounds, MapDetail.Overview, complete = false)), 19.0, 73.0))
     }
 }

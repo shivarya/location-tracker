@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,8 +31,12 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -59,6 +64,7 @@ import com.shivarya.locationspeedtracker.core.geo.Bounds
 import com.shivarya.locationspeedtracker.core.geo.LatLon
 import com.shivarya.locationspeedtracker.core.maps.MapLibreSetup
 import com.shivarya.locationspeedtracker.core.maps.OfflineArea
+import com.shivarya.locationspeedtracker.core.maps.MapDetail
 import com.shivarya.locationspeedtracker.core.maps.TileEstimator
 import com.shivarya.locationspeedtracker.ui.components.NoticeCard
 import com.shivarya.locationspeedtracker.ui.components.SectionCard
@@ -91,7 +97,8 @@ fun OfflineMapsScreen(onBack: () -> Unit, vm: OfflineMapsViewModel = hiltViewMod
         },
     ) { padding ->
         LazyColumn(
-            Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+            // Edge-to-edge: the window no longer resizes for the keyboard, so the list makes room itself.
+            Modifier.fillMaxSize().padding(padding).imePadding().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
@@ -131,6 +138,21 @@ fun OfflineMapsScreen(onBack: () -> Unit, vm: OfflineMapsViewModel = hiltViewMod
             item {
                 val sel = ui.selection
                 SectionCard {
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        MapDetail.entries.forEachIndexed { i, d ->
+                            SegmentedButton(
+                                selected = ui.detail == d,
+                                onClick = { vm.setDetail(d) },
+                                shape = SegmentedButtonDefaults.itemShape(i, MapDetail.entries.size),
+                            ) { Text(d.label) }
+                        }
+                    }
+                    Text(
+                        ui.detail.hint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp, bottom = 8.dp),
+                    )
                     if (sel != null) {
                         val color = if (sel.fits) MaterialTheme.colorScheme.onSurface else SpeedTrackTheme.signal.bad
                         Text("≈ ${"%,d".format(sel.tiles)} tiles · ≈ ${mb(sel.bytes)}", style = MaterialTheme.typography.titleMedium, color = color)
@@ -143,10 +165,14 @@ fun OfflineMapsScreen(onBack: () -> Unit, vm: OfflineMapsViewModel = hiltViewMod
                         }
                         if (!sel.fits) {
                             Text(
-                                "Too big for one download (max ${"%,d".format(TileEstimator.MAX_TILES)} tiles / ${mb(TileEstimator.MAX_BYTES)}). Zoom in, or download it in parts.",
+                                "Too big for one download (max ${"%,d".format(TileEstimator.MAX_TILES)} tiles / ${mb(TileEstimator.MAX_BYTES)}). " +
+                                    "Zoom in, choose less detail, or download it in parts.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = SpeedTrackTheme.signal.bad,
                             )
+                            sel.fitsAt?.let { d ->
+                                TextButton(onClick = { vm.setDetail(d) }) { Text("Fits with ${d.label} detail: use that") }
+                            }
                         }
                     }
                     Spacer(Modifier.height(8.dp))
@@ -200,8 +226,8 @@ private fun AreaRow(a: OfflineArea, onShow: () -> Unit, onPause: () -> Unit, onR
                     Text(a.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     val status = when {
                         a.error != null -> a.error
-                        a.complete -> "Ready offline · ${mb(a.tileBytes)}"
-                        a.downloading -> "Downloading ${(a.progress * 100).toInt()}% · ${mb(a.tileBytes)}"
+                        a.complete -> "Ready offline · ${a.detail.label} · ${mb(a.tileBytes)}"
+                        a.downloading -> "Downloading ${(a.progress * 100).toInt()}% · ${a.detail.label} · ${mb(a.tileBytes)}"
                         else -> "Paused at ${(a.progress * 100).toInt()}%"
                     }
                     Text(

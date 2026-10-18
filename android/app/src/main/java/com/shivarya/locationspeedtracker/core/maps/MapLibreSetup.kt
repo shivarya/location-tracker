@@ -47,6 +47,17 @@ object MapLibreSetup {
     fun style(dark: Boolean) = if (dark) STYLE_DARK else STYLE_LIGHT
 }
 
+/** How far down an offline area goes. Less detail covers far more ground per MB. */
+enum class MapDetail(val label: String, val maxZoom: Int, val hint: String) {
+    Streets("Streets", 14, "Every street and building, for walks, runs and drives around town."),
+    Roads("Roads", 11, "Main roads, towns and villages, for road trips across a region."),
+    Overview("Overview", 7, "Highways, cities and borders, enough to follow a flight across a whole country.");
+
+    companion object {
+        fun forZoom(maxZoom: Int) = entries.firstOrNull { it.maxZoom == maxZoom } ?: Streets
+    }
+}
+
 /** Slippy-map tile maths for sizing an offline download before starting it. */
 object TileEstimator {
     /** OpenMapTiles vector tiles stop at z14; MapLibre over-zooms them for street-level detail. */
@@ -76,7 +87,7 @@ object TileEstimator {
         (x(b.east, z) - x(b.west, z) + 1).toLong() * (y(b.south, z) - y(b.north, z) + 1)
 
     /** Tile bytes one download of [b] fetches. The dark style reuses the same tiles, so it adds almost nothing. */
-    fun estimatedBytes(b: Bounds): Long = (0..MAX_ZOOM).sumOf { z -> tilesAt(b, z) * TILE_KIB[z] * 1024L }
+    fun estimatedBytes(b: Bounds, maxZoom: Int = MAX_ZOOM): Long = (0..maxZoom).sumOf { z -> tilesAt(b, z) * TILE_KIB[z] * 1024L }
 
-    fun fits(b: Bounds) = tiles(b) <= MAX_TILES && estimatedBytes(b) <= MAX_BYTES
+    fun fits(b: Bounds, maxZoom: Int = MAX_ZOOM) = tiles(b, 0, maxZoom) <= MAX_TILES && estimatedBytes(b, maxZoom) <= MAX_BYTES
 }

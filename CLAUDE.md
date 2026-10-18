@@ -38,7 +38,7 @@ Local, gitignored config in `android/`: `local.properties` (`sdk.dir`, `MAPS_API
 `.env`), `keystore.properties` (→ `../location-tracker-release.keystore`), `debug.keystore` (the standard RN debug
 key, so the Maps key restriction that covered Expo dev builds still applies). Without `MAPS_API_KEY` the build warns
 and every map falls back to MapLibre. Version: `android/version.properties` (Expo 1.0.9 = versionCode 12; 13 is
-used up by a Play draft; native 2.0.0 = 14, so the next release is 15. EAS's remote counter is stale at 4 — always check
+used up by a Play draft; native 2.0.0 = 14, 2.0.1 = 15. EAS's remote counter is stale at 4 — always check
 Play Console's highest code).
 
 ### Architecture (`com.shivarya.locationspeedtracker`)
@@ -56,7 +56,8 @@ Play Console's highest code).
   `GnssMonitor` (satellites, NMEA DOP, TTFF), `LocationDoctor` (GPS doctor checks + one-tap fixes),
   `NetworkMonitor`.
 - `core/maps/` — `MapLibreSetup` (OpenFreeMap styles, UA + ≤4 parallel requests), `TileEstimator` (≤2 700 tiles /
-  50 MB per area — OpenFreeMap's offline terms; per-zoom sizes are measured gzip bytes, low-zoom tiles are ~1 MB each), `OfflineRegions` (light + dark region per area). Maps go through
+  50 MB per area — OpenFreeMap's offline terms; per-zoom sizes are measured gzip bytes, low-zoom tiles are ~1 MB each), `OfflineRegions` (light + dark region per area; each area has a `MapDetail` — Streets z14, Roads z11,
+  Overview z7, so a whole country fits for flights). Maps go through
   `feature/map/TrackMap`: Google Maps online, MapLibre when offline or keyless (`MapEnvironment`).
 - `core/health/` — Health Connect write (idempotent `clientRecordId = "<session>/<kind>"`) and heart-rate backfill
   from watch apps (e.g. boAt via its companion app), `HealthSyncWorker` (now + again 3 h later).
@@ -81,6 +82,8 @@ Play Console's highest code).
 - Maps key is restricted to the package + debug (`5E:8F:…`), upload (`7E:80:…`) and Play app-signing
   (`00:D3:33:E2:95:AE:38:26:AC:87:5C:83:B8:07:10:27:5B:95:7F:99`) SHA-1s; a missing one renders Google maps blank
   (MapLibre still works).
+- Offline, MapLibre draws nothing past an area's last zoom level (no overzoom from missing tiles), so
+  `MapLibreTrackMap` caps the zoom at the covering area's level (`offlineZoomCap`) while there's no connection.
 - Offline areas: MapLibre's `completedResourceSize` includes the style's fonts/icons, which every area shares, and the
   dark region reuses the light one's tile URLs. Sizes and the 50 MB stop use the light region's `completedTileSize`.
 - Landscape phones (window height < 480 dp) get a side rail instead of Material's short bottom bar (`AppScaffold`),

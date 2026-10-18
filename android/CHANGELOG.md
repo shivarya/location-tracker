@@ -4,6 +4,28 @@ Releases up to 1.0.9 were the Expo / React Native app (`../mobile/CHANGELOG.md`)
 rewrite, shipped as an in-place update of the same Play package (`com.shivarya.locationspeedtracker`, same upload
 key); previous sessions and the unit setting are imported on first launch.
 
+## [2.0.1] - 2026-10-18
+
+versionCode 15.
+
+### Added
+- Offline maps: choose how much detail to download — **Streets**, **Roads** or **Overview**. Overview covers a whole
+  country for flights (all of India is about 25 MB); when an area is too big, SpeedTrack suggests the level that fits.
+
+### Fixed
+- The keyboard no longer covers the area name and Download button on the Offline maps screen, or the fields on the
+  Profile screen.
+- Offline, maps stay at a zoom the downloaded area can draw instead of going blank when zoomed in.
+- An offline area's dark-mode copy could start downloading twice.
+
+### Google Play Notes
+```
+SpeedTrack 2.0.1
+• Offline maps: pick the detail level. "Overview" fits a whole country for flights (all of India in about 25 MB)
+• Offline maps stay visible when you zoom in without a connection
+• The keyboard no longer covers text boxes
+```
+
 ## [2.0.0] - 2026-10-18
 
 versionCode 14 (13 was uploaded to a Play draft and never released).
