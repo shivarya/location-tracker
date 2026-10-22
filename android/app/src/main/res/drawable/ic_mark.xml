@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The SpeedTrack mark cropped to a 24dp glyph: notification small icon and Quick Settings tile (both tinted by
-     the system). Same paths as ic_launcher_foreground.xml, shifted so the mark's bounds are centred. -->
+<!-- The S road as a 24dp glyph: notification small icon and Quick Settings tile (both tinted by the system).
+     Same path as ic_launcher_foreground.xml, cropped to the road's bounds (x 31..77, y 26.5..81.5). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -8,24 +8,10 @@
     android:viewportHeight="56">
     <group
         android:translateX="-26"
-        android:translateY="-25">
+        android:translateY="-26">
         <path
-            android:pathData="M36.38,71.78 A23,23,0,1,1,71.62,71.78"
-            android:strokeWidth="8"
-            android:strokeColor="#FFFFFF"
-            android:strokeLineCap="round" />
-        <group
-            android:rotation="38"
-            android:scaleX="0.82"
-            android:scaleY="0.82"
-            android:translateX="54"
-            android:translateY="59">
-            <path
-                android:fillColor="#FFFFFF"
-                android:pathData="M0,-18 L9.5,9 L0,4 L-9.5,9 Z"
-                android:strokeWidth="1.5"
-                android:strokeColor="#FFFFFF"
-                android:strokeLineJoin="round" />
-        </group>
+            android:pathData="M77,34 H50 C37,34 37,54 50,54 H58 C71,54 71,74 58,74 H31"
+            android:strokeWidth="15"
+            android:strokeColor="#FFFFFF" />
     </group>
 </vector>

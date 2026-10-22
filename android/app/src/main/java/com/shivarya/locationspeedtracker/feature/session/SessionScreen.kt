@@ -1,5 +1,7 @@
 package com.shivarya.locationspeedtracker.feature.session
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,16 +34,21 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,6 +61,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -90,6 +99,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SessionScreen(onBack: () -> Unit, vm: SessionViewModel = hiltViewModel()) {
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val shareCard by vm.shareCard.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = LocalSnackbar.current
     val scope = rememberCoroutineScope()
@@ -122,6 +132,7 @@ fun SessionScreen(onBack: () -> Unit, vm: SessionViewModel = hiltViewModel()) {
                     Box {
                         IconButton(onClick = { shareMenu = true }) { Icon(Icons.Filled.Share, contentDescription = "Share") }
                         DropdownMenu(expanded = shareMenu, onDismissRequest = { shareMenu = false }) {
+                            DropdownMenuItem(text = { Text("Image with map and stats") }, onClick = { shareMenu = false; vm.openShareCard() })
                             ExportFormat.entries.forEach { f ->
                                 DropdownMenuItem(text = { Text(f.label) }, onClick = { shareMenu = false; vm.share(f) })
                             }
@@ -164,6 +175,9 @@ fun SessionScreen(onBack: () -> Unit, vm: SessionViewModel = hiltViewModel()) {
     }
     if (editingNotes && s != null) {
         TextDialog("Notes", s.notes.orEmpty(), singleLine = false, onDismiss = { editingNotes = false }) { vm.setNotes(it) }
+    }
+    if (shareCard.open) {
+        ShareCardSheet(shareCard, onHideEnds = vm::setHideEnds, onShare = { vm.shareCardImage() }, onDismiss = vm::closeShareCard)
     }
     if (activityMenu) {
         AlertDialog(
@@ -388,6 +402,52 @@ private fun LapTable(laps: List<LapEntity>, units: UnitSystem, activity: Activit
                 Text(Format.duration((l.endTime - l.startTime) / 1000.0), Modifier.weight(1f), fontWeight = weight)
                 Text(if (activity.onFoot) Format.paceValue(speed, units) else Units.speed(speed, units).value.fmt(1), Modifier.weight(1f), fontWeight = weight)
                 Text(Units.altitude(l.elevGainM, units).value.fmt(0), Modifier.weight(0.8f), fontWeight = weight)
+            }
+        }
+    }
+}
+
+/** Preview of the share image, with the privacy toggle; the image is drawn by ShareCardRenderer. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShareCardSheet(state: ShareCardUi, onHideEnds: (Boolean) -> Unit, onShare: () -> Unit, onDismiss: () -> Unit) {
+    // Starts hidden and opens straight to full height (no half-open stop).
+    val sheet = rememberBottomSheetState(SheetValue.Hidden, setOf(SheetValue.Hidden, SheetValue.Expanded))
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text("Share image", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Box(
+                Modifier
+                    .fillMaxWidth(0.82f)
+                    .align(Alignment.CenterHorizontally)
+                    .aspectRatio(1080f / 1350f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center,
+            ) {
+                state.card?.let { Image(it.bitmap.asImageBitmap(), contentDescription = "Preview of the image to share", modifier = Modifier.fillMaxSize()) }
+                if (state.loading) CircularProgressIndicator()
+            }
+            state.error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Hide start and finish", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        "Leaves the first and last 200 m off the map, so it doesn't show where you live.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Switch(checked = state.hideEnds, onCheckedChange = onHideEnds, enabled = !state.loading)
+            }
+            Button(onClick = onShare, enabled = state.card != null && !state.loading, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Filled.Share, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Share")
             }
         }
     }

@@ -1,7 +1,5 @@
-<!-- The mark alone, cropped to its bounds (themed icons, notification / Quick Settings glyph = drawable/ic_mark.xml). -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="26 25 56 56">
-  <path d="M36.38,71.78 A23,23 0 1 1 71.62,71.78" fill="none" stroke="#1F5EFF" stroke-width="8" stroke-linecap="round"/>
-  <g transform="translate(54 59) rotate(38) scale(0.82)">
-    <path d="M0,-18 L9.5,9 L0,4 L-9.5,9 Z" fill="#1F5EFF" stroke="#1F5EFF" stroke-width="1.5" stroke-linejoin="round"/>
-  </g>
+<!-- The S road alone, single colour, cropped to its bounds (themed icon, notification / Quick Settings glyph =
+     drawable/ic_launcher_monochrome.xml and drawable/ic_mark.xml). No centre-line dashes: they vanish at glyph sizes. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="26 26 56 56">
+  <path d="M77,34 H50 C37,34 37,54 50,54 H58 C71,54 71,74 58,74 H31" fill="none" stroke="#6D28D9" stroke-width="15"/>
 </svg>

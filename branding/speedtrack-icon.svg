@@ -1,12 +1,22 @@
-<!-- SpeedTrack app icon, master artwork. 108×108 = the Android adaptive-icon canvas (the middle 72 units survive
-     any launcher mask). Android draws it from android/app/src/main/res/drawable/ic_launcher_foreground.xml on
-     @color/icon_background — keep those in sync with this file. -->
+<!-- SpeedTrack app icon, master artwork: an S-shaped road (route + the S of SpeedTrack) on violet tonal shading.
+     108×108 = the Android adaptive-icon canvas. The glyph is scaled to 0.9 about the centre so the road ends stay in
+     the 66-unit safe circle; "dash" is the background gradient expressed in that scaled space, so the centre-line
+     dashes read as gaps. Android draws it from android/app/src/main/res/drawable/ic_launcher_{background,foreground}.xml
+     — keep those in sync with this file. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
-  <rect width="108" height="108" fill="#1F5EFF"/>
-  <!-- 260° speedometer arc, gap at the bottom -->
-  <path d="M36.38,71.78 A23,23 0 1 1 71.62,71.78" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
-  <!-- needle = GPS navigation arrow -->
-  <g transform="translate(54 59) rotate(38) scale(0.82)">
-    <path d="M0,-18 L9.5,9 L0,4 L-9.5,9 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="108" y2="108">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#4C1D95"/>
+    </linearGradient>
+    <linearGradient id="dash" gradientUnits="userSpaceOnUse" x1="-6" y1="-6" x2="114" y2="114">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#4C1D95"/>
+    </linearGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#bg)"/>
+  <g transform="translate(54 54) scale(0.9) translate(-54 -54)">
+    <path d="M77,34 H50 C37,34 37,54 50,54 H58 C71,54 71,74 58,74 H31" fill="none" stroke="#FFFFFF" stroke-width="15"/>
+    <path d="M77,34 H50 C37,34 37,54 50,54 H58 C71,54 71,74 58,74 H31" fill="none" stroke="url(#dash)" stroke-width="2.5" stroke-dasharray="5 5"/>
   </g>
 </svg>

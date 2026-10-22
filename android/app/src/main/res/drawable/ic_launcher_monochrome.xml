@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed (Android 13+) icon: the S road alone in one colour, same placement as ic_launcher_foreground.xml. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.9"
+        android:scaleY="0.9">
+        <path
+            android:pathData="M77,34 H50 C37,34 37,54 50,54 H58 C71,54 71,74 58,74 H31"
+            android:strokeWidth="15"
+            android:strokeColor="#FFFFFF" />
+    </group>
+</vector>

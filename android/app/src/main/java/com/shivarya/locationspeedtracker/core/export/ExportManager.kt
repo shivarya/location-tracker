@@ -185,7 +185,10 @@ class ExportManager @Inject constructor(
 
     fun uri(file: File): Uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
-    fun shareIntent(files: List<ExportFile>, subject: String): Intent {
+    /** Where the share image for [s] is written (cache/exports, shared through the FileProvider). */
+    fun imageFile(s: SessionEntity): File = File(dir, "speedtrack-${baseName(s)}.png")
+
+    fun shareIntent(files: List<ExportFile>, subject: String, text: String? = null): Intent {
         val uris = ArrayList(files.map { uri(it.file) })
         val send = if (uris.size == 1) {
             Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uris[0]).setType(files[0].mime)
@@ -193,6 +196,7 @@ class ExportManager @Inject constructor(
             Intent(Intent.ACTION_SEND_MULTIPLE).putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris).setType("*/*")
         }
         send.putExtra(Intent.EXTRA_SUBJECT, subject).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        text?.let { send.putExtra(Intent.EXTRA_TEXT, it) }
         return Intent.createChooser(send, subject).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 

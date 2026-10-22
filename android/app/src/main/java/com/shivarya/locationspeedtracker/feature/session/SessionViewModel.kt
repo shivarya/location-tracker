@@ -11,8 +11,12 @@ import com.shivarya.locationspeedtracker.core.data.db.LapEntity
 import com.shivarya.locationspeedtracker.core.data.db.MetricEntity
 import com.shivarya.locationspeedtracker.core.data.db.SessionEntity
 import com.shivarya.locationspeedtracker.core.data.toSample
+import com.shivarya.locationspeedtracker.core.export.ExportFile
 import com.shivarya.locationspeedtracker.core.export.ExportFormat
 import com.shivarya.locationspeedtracker.core.export.ExportManager
+import com.shivarya.locationspeedtracker.core.export.ShareCard
+import com.shivarya.locationspeedtracker.core.export.ShareCardRenderer
+import com.shivarya.locationspeedtracker.core.export.shareSummary
 import com.shivarya.locationspeedtracker.core.model.ActivityType
 import com.shivarya.locationspeedtracker.core.settings.AppSettings
 import com.shivarya.locationspeedtracker.core.settings.SettingsRepository
@@ -24,6 +28,7 @@ import com.shivarya.locationspeedtracker.core.health.HealthConnectManager
 import com.shivarya.locationspeedtracker.core.health.HealthSyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
@@ -34,8 +39,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 data class SessionUi(
     val loading: Boolean = true,
@@ -47,6 +54,15 @@ data class SessionUi(
     val metrics: List<MetricEntity> = emptyList(),
     val settings: AppSettings = AppSettings(),
     val deleted: Boolean = false,
+)
+
+/** The share-image preview sheet: drawn when it opens and again whenever "Hide start and finish" changes. */
+data class ShareCardUi(
+    val open: Boolean = false,
+    val hideEnds: Boolean = false,
+    val loading: Boolean = false,
+    val card: ShareCard? = null,
+    val error: String? = null,
 )
 
 sealed interface SessionEvent {
@@ -62,6 +78,7 @@ class SessionViewModel @Inject constructor(
     private val sessions: SessionRepository,
     private val health: HealthConnectManager,
     private val export: ExportManager,
+    private val cards: ShareCardRenderer,
     settings: SettingsRepository,
 ) : ViewModel() {
     val id: String = savedState.toRoute<SessionRoute>().id
@@ -145,5 +162,49 @@ class SessionViewModel @Inject constructor(
             }
             events.send(SessionEvent.Share(export.shareIntent(listOf(file), "SpeedTrack session")))
         }.onFailure { events.send(SessionEvent.Message("Export failed: ${it.message}")) }
+    }
+
+    private val _shareCard = MutableStateFlow(ShareCardUi())
+    val shareCard: StateFlow<ShareCardUi> = _shareCard
+    private var cardJob: Job? = null
+
+    fun openShareCard() {
+        _shareCard.value = ShareCardUi(open = true)
+        renderCard()
+    }
+
+    fun setHideEnds(hide: Boolean) {
+        _shareCard.update { it.copy(hideEnds = hide) }
+        renderCard()
+    }
+
+    fun closeShareCard() {
+        cardJob?.cancel()
+        _shareCard.value = ShareCardUi()
+    }
+
+    private fun renderCard() {
+        cardJob?.cancel()
+        cardJob = viewModelScope.launch {
+            _shareCard.update { it.copy(loading = true, error = null) }
+            try {
+                val full = sessions.full(id) ?: error("the session is gone")
+                val card = cards.render(full, ui.value.settings, _shareCard.value.hideEnds)
+                _shareCard.update { it.copy(loading = false, card = card) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _shareCard.update { it.copy(loading = false, error = "Couldn't draw the image: ${e.message}") }
+            }
+        }
+    }
+
+    fun shareCardImage() = viewModelScope.launch {
+        val card = _shareCard.value.card ?: return@launch
+        val s = ui.value.session ?: return@launch
+        val st = ui.value.settings
+        val text = shareSummary(s, st.unitSystem, st.showPace)
+        events.send(SessionEvent.Share(export.shareIntent(listOf(ExportFile(card.file, "image/png")), "SpeedTrack session", text)))
+        closeShareCard()
     }
 }

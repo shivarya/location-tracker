@@ -14,6 +14,6 @@ const render = (svg, width) =>
 
 (async () => {
   await sharp(render('speedtrack-icon.svg', 512)).png().toFile(here('play-icon-512.png'));
-  await sharp(render('feature-graphic.svg', 1024)).flatten({ background: '#1F5EFF' }).removeAlpha().png().toFile(here('feature-graphic.png'));
+  await sharp(render('feature-graphic.svg', 1024)).flatten({ background: '#6D28D9' }).removeAlpha().png().toFile(here('feature-graphic.png'));
   console.log('Wrote play-icon-512.png and feature-graphic.png');
 })();

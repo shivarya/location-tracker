@@ -1,6 +1,6 @@
 <resources>
-    <!-- Brand blue (branding/README.md): launcher icon backdrop, splash and notification accent. -->
-    <color name="icon_background">#1F5EFF</color>
-    <color name="splash_background">#1F5EFF</color>
-    <color name="notification_accent">#1F5EFF</color>
+    <!-- Brand (branding/README.md): violet shading #A78BFA → #4C1D95. The launcher icon's gradient lives in
+         drawable/ic_launcher_background.xml; these are the solid colours the system needs. -->
+    <color name="splash_background">#140F24</color>
+    <color name="notification_accent">#7C3AED</color>
 </resources>

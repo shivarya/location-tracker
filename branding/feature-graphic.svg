@@ -1,13 +1,21 @@
-<!-- Google Play feature graphic, 1024×500. -->
+<!-- Google Play feature graphic, 1024×500. "dash" is the background gradient mapped into the glyph's scaled space. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500" width="1024" height="500">
-  <rect width="1024" height="500" fill="#1F5EFF"/>
+  <defs>
+    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="500">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#4C1D95"/>
+    </linearGradient>
+    <linearGradient id="dash" gradientUnits="userSpaceOnUse" x1="5.56" y1="5.93" x2="195.19" y2="98.52">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#4C1D95"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="500" fill="url(#bg)"/>
   <g transform="translate(-30 -32) scale(5.4)">
-    <path d="M36.38,71.78 A23,23 0 1 1 71.62,71.78" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
-    <g transform="translate(54 59) rotate(38) scale(0.82)">
-      <path d="M0,-18 L9.5,9 L0,4 L-9.5,9 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
-    </g>
+    <path d="M77,34 H50 C37,34 37,54 50,54 H58 C71,54 71,74 58,74 H31" fill="none" stroke="#FFFFFF" stroke-width="15"/>
+    <path d="M77,34 H50 C37,34 37,54 50,54 H58 C71,54 71,74 58,74 H31" fill="none" stroke="url(#dash)" stroke-width="2.5" stroke-dasharray="5 5"/>
   </g>
   <text x="458" y="236" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="84" font-weight="700" fill="#FFFFFF">SpeedTrack</text>
-  <text x="462" y="294" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="30" fill="#DCE6FF">GPS speedometer · route tracker</text>
-  <text x="462" y="336" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="30" fill="#DCE6FF">Offline maps · sensors · fitness</text>
+  <text x="462" y="294" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="30" fill="#EDE9FE">GPS speedometer · route tracker</text>
+  <text x="462" y="336" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="30" fill="#EDE9FE">Offline maps · sensors · fitness</text>
 </svg>

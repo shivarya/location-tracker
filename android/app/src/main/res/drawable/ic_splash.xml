@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash icon: the app icon as a gradient disc (the splash screen masks icons to a circle of 2/3 the canvas).
+     The road is scaled to 0.68 inside the disc; its dash gradient is the disc's (20..88) mapped into that space. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M20,54a34,34 0,1 0,68 0a34,34 0,1 0,-68 0z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endColor="#FF4C1D95"
+                android:endX="88"
+                android:endY="88"
+                android:startColor="#FFA78BFA"
+                android:startX="20"
+                android:startY="20"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.68"
+        android:scaleY="0.68">
+        <path
+            android:pathData="M77,34 H50 C37,34 37,54 50,54 H58 C71,54 71,74 58,74 H31"
+            android:strokeWidth="15"
+            android:strokeColor="#FFFFFF" />
+        <path
+            android:pathData="M77.00,34.00 L72.00,34.00 M67.00,34.00 L62.00,34.00 M57.00,34.00 L52.00,34.00 M47.03,34.39 L45.88,34.79 L44.76,35.37 L43.76,36.08 L42.83,36.97 M40.56,41.36 L40.34,42.58 L40.25,43.85 L40.30,45.12 L40.49,46.32 M42.62,50.79 L43.47,51.67 L44.50,52.46 L45.59,53.07 L46.73,53.52 M51.68,54.00 L56.68,54.00 M61.61,54.60 L62.77,55.10 L63.82,55.76 L64.75,56.53 L65.61,57.49 M67.58,62.03 L67.73,63.25 L67.74,64.52 L67.61,65.79 L67.35,66.98 M64.93,71.29 L64.00,72.11 L62.97,72.78 L61.82,73.33 L60.62,73.70 M55.64,74.00 L50.64,74.00 M45.64,74.00 L40.64,74.00 M35.64,74.00 L31.00,74.00"
+            android:strokeWidth="2.5">
+            <aapt:attr name="android:strokeColor">
+                <gradient
+                    android:endColor="#FF4C1D95"
+                    android:endX="104"
+                    android:endY="104"
+                    android:startColor="#FFA78BFA"
+                    android:startX="4"
+                    android:startY="4"
+                    android:type="linear" />
+            </aapt:attr>
+        </path>
+    </group>
+</vector>

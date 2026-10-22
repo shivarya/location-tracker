@@ -4,6 +4,27 @@ Releases up to 1.0.9 were the Expo / React Native app (`../mobile/CHANGELOG.md`)
 rewrite, shipped as an in-place update of the same Play package (`com.shivarya.locationspeedtracker`, same upload
 key); previous sessions and the unit setting are imported on first launch.
 
+## [2.0.2] - 2026-10-22
+
+versionCode 16.
+
+### Added
+- **Share an image of your session**: the route on a map, coloured by speed, with distance, time, pace or speed,
+  climb and more — ready for WhatsApp or Instagram (Session → Share → Image with map and stats). Works offline in
+  downloaded areas, and draws the route on its own when there's no map. "Hide start and finish" leaves the first and
+  last 200 m off the image.
+
+### Changed
+- New app icon: an S-shaped road on violet. The old speedometer looked too much like a speed-test app.
+
+### Google Play Notes
+```
+SpeedTrack 2.0.2
+• Share your session as an image: your route on a map with distance, time, pace and more
+• "Hide start and finish" keeps your home off the shared map
+• New app icon
+```
+
 ## [2.0.1] - 2026-10-18
 
 versionCode 15.
