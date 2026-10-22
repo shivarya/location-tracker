@@ -9,7 +9,7 @@ gradient. It replaced a speedometer-arc mark (2.0.0–2.0.1) that looked too muc
 | `speedtrack-icon.svg` | Master icon on the 108×108 adaptive-icon canvas (full-bleed gradient square) |
 | `speedtrack-mark.svg` | The road alone, single colour, no dashes (themed icon / small glyphs) |
 | `feature-graphic.svg` | Google Play feature graphic (1024×500) |
-| `play-icon-512.png`, `feature-graphic.png` | Rendered Play Store uploads — regenerate with `render.js` |
+| `play-icon-512.png`, `feature-graphic.png` | Rendered Play Store uploads — regenerate with `render.js`. `feature-graphic.png` is also the "Share SpeedTrack" card: copy it to `android/app/src/main/res/raw/share_card.png` when it changes |
 
 Render the PNGs (uses the resvg and sharp copies installed for the legacy Expo app):
 

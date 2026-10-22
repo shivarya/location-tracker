@@ -12,7 +12,7 @@ testing. Production is always a manual, staged rollout in Play Console and needs
    **Google Play Notes** block (≤ 500 chars, pasted verbatim as release notes).
 2. Bump `android/version.properties` (`versionCode` +1, `versionName`). The versionCode must be above **every** code
    Play has seen — check Play Console → App bundle explorer. Lineage: Expo 1.0.9 = 12; 13 = used up (uploaded to a Play
-   draft, then replaced); native 2.0.0 = **14**; 2.0.1 = 15 (published by play-deploy, 2026-10-18); 2.0.2 = 16. A versionCode is spent as soon as a bundle
+   draft, then replaced); native 2.0.0 = **14**; 2.0.1 = 15 (published by play-deploy, 2026-10-18); 2.0.2 = 16 (published 2026-10-22); 2.0.3 = 17. A versionCode is spent as soon as a bundle
    is uploaded, even into a draft. EAS's remote counter (`eas build:version:get -p android` in `mobile/`) is stale
    (4) — ignore it.
 3. Commit as `Release x.y.z (N): …` only when the user asks.

@@ -8,7 +8,7 @@ Tracker"). Public GitHub repo `shivarya/location-tracker` — keep keys, keystor
 
 | Path | What | Status |
 |------|------|--------|
-| `android/` | **Native Kotlin/Compose app** (2.0.0+) — the one that ships; 2.0.1 (versionCode 15) on Play closed testing since 2026-10-18; 2.0.2 (16) in progress | Active |
+| `android/` | **Native Kotlin/Compose app** (2.0.0+) — the one that ships; 2.0.2 (versionCode 16) on Play closed testing since 2026-10-22; 2.0.3 (17) in progress | Active |
 | `mobile/` | Expo / React Native app (≤ 1.0.9) | **Deprecated** — kept for reference and a rollback build until native testing is done; then delete it |
 | `branding/` | App logo masters (SVG) + rendered Play icon / feature graphic (`node branding/render.js mobile/node_modules`); see its README for the Android vectors to keep in sync | Active |
 | `website/` + root `index.html` / `privacy.html` / `terms.html` / `styles.css` / `script.js` | Landing page + privacy policy (root copies are the gh-pages ones) | Active |
@@ -38,7 +38,7 @@ Local, gitignored config in `android/`: `local.properties` (`sdk.dir`, `MAPS_API
 `.env`), `keystore.properties` (→ `../location-tracker-release.keystore`), `debug.keystore` (the standard RN debug
 key, so the Maps key restriction that covered Expo dev builds still applies). Without `MAPS_API_KEY` the build warns
 and every map falls back to MapLibre. Version: `android/version.properties` (Expo 1.0.9 = versionCode 12; 13 is
-used up by a Play draft; native 2.0.0 = 14, 2.0.1 = 15, 2.0.2 = 16. EAS's remote counter is stale at 4 — always check
+used up by a Play draft; native 2.0.0 = 14, 2.0.1 = 15, 2.0.2 = 16, 2.0.3 = 17. EAS's remote counter is stale at 4 — always check
 Play Console's highest code).
 
 ### Architecture (`com.shivarya.locationspeedtracker`)
@@ -67,6 +67,9 @@ Play Console's highest code).
 - `core/export/` — GPX/TCX/KML/CSV/JSON writers, GPX parser (SAX, no DTDs), `ImportManager`, ZIP `BackupManager`,
   `ShareCard` (1080×1350 share image: MapLibre `MapSnapshotter` of OpenFreeMap + speed-coloured route + stats; route-only
   fallback on the brand gradient; "Hide start and finish" trims 200 m per end).
+- `core/share/AppShare` — "Share SpeedTrack": `res/raw/share_card.png` (= `branding/feature-graphic.png`; refresh it with
+  the logo) + pitch + both Play links (join the closed test, then install); same pattern as Split Cash / Diet Plan.
+  Drop the join-test link once the app is in production.
 - `core/perf/PerformanceTimer` — pure state machine; launch extrapolated from the first two moving fixes;
   crossings interpolated; 1-ft rollout.
 - `feature/*` — Compose screens (track, map, sensors, history, session, gps doctor, offline, perf, hr, health,

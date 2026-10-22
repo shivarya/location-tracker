@@ -51,6 +51,7 @@ import com.shivarya.locationspeedtracker.core.settings.MapEngine
 import com.shivarya.locationspeedtracker.core.settings.MapType
 import com.shivarya.locationspeedtracker.core.settings.Palette
 import com.shivarya.locationspeedtracker.core.settings.ThemeMode
+import com.shivarya.locationspeedtracker.core.share.AppShare
 import com.shivarya.locationspeedtracker.core.units.UnitSystem
 import com.shivarya.locationspeedtracker.ui.components.SectionCard
 import com.shivarya.locationspeedtracker.ui.theme.supportsDynamicColor
@@ -151,6 +152,12 @@ fun SettingsScreen(nav: SettingsNav, vm: SettingsViewModel = hiltViewModel()) {
                     onClick = { confirmClear = true },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer),
                 ) { Text("Delete all sessions") }
+            }
+
+            SectionCard(title = "Spread the word") {
+                NavRow("Share SpeedTrack", "Send friends the app, with the links to join the test and install it") {
+                    runCatching { context.startActivity(AppShare.intent(context)) }
+                }
             }
 
             SectionCard(title = "About") {

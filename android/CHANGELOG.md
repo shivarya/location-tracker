@@ -4,6 +4,21 @@ Releases up to 1.0.9 were the Expo / React Native app (`../mobile/CHANGELOG.md`)
 rewrite, shipped as an in-place update of the same Play package (`com.shivarya.locationspeedtracker`, same upload
 key); previous sessions and the unit setting are imported on first launch.
 
+## [2.0.3] - 2026-10-22
+
+versionCode 17.
+
+### Added
+- **Share SpeedTrack** (Settings → Spread the word): sends friends the app's logo card with a short list of what's
+  new and both links — join the closed test, then install from Play.
+
+### Google Play Notes
+```
+SpeedTrack 2.0.3
+• Share SpeedTrack with friends from Settings: the app card, what's new and the links to join and install
+• Share any session as an image with your route and stats (2.0.2)
+```
+
 ## [2.0.2] - 2026-10-22
 
 versionCode 16.
