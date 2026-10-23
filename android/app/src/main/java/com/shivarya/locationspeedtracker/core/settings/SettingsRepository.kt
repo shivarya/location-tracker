@@ -77,6 +77,8 @@ data class AppSettings(
     val healthConnectSync: Boolean = false,
     val perfRollout: Boolean = true,
     val perfDisclaimerAccepted: Boolean = false,
+    /** A session's share image carries a QR code to the app and its message the Play links; the share sheet's switch. */
+    val shareAppLinks: Boolean = true,
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -116,6 +118,7 @@ class SettingsRepository @Inject constructor(
             healthConnectSync = p[Keys.HEALTH_SYNC] ?: d.healthConnectSync,
             perfRollout = p[Keys.PERF_ROLLOUT] ?: d.perfRollout,
             perfDisclaimerAccepted = p[Keys.PERF_DISCLAIMER] ?: d.perfDisclaimerAccepted,
+            shareAppLinks = p[Keys.SHARE_APP_LINKS] ?: d.shareAppLinks,
         )
     }
 
@@ -137,6 +140,7 @@ class SettingsRepository @Inject constructor(
     suspend fun setHealthConnectSync(v: Boolean) = store.edit { it[Keys.HEALTH_SYNC] = v }
     suspend fun setPerfRollout(v: Boolean) = store.edit { it[Keys.PERF_ROLLOUT] = v }
     suspend fun setPerfDisclaimerAccepted() = store.edit { it[Keys.PERF_DISCLAIMER] = true }
+    suspend fun setShareAppLinks(v: Boolean) = store.edit { it[Keys.SHARE_APP_LINKS] = v }
 
     suspend fun setProfile(p: Profile) = store.edit {
         it[Keys.WEIGHT] = p.weightKg
@@ -226,6 +230,7 @@ class SettingsRepository @Inject constructor(
         val HEALTH_SYNC = booleanPreferencesKey("health_connect_sync")
         val PERF_ROLLOUT = booleanPreferencesKey("perf_rollout")
         val PERF_DISCLAIMER = booleanPreferencesKey("perf_disclaimer")
+        val SHARE_APP_LINKS = booleanPreferencesKey("share_app_links")
         val LEGACY_MIGRATED = booleanPreferencesKey("legacy_migrated")
         val LEGACY_ATTEMPTS = intPreferencesKey("legacy_attempts")
         val LEGACY_IMPORTED = intPreferencesKey("legacy_imported_sessions")

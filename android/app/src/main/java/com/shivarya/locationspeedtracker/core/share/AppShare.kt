@@ -19,16 +19,22 @@ object AppShare {
      */
     const val TESTING_OPT_IN_URL = "https://play.google.com/apps/testing/com.shivarya.locationspeedtracker"
 
+    /**
+     * What the QR code on a session's share image opens. A code holds one link, so it's the first step; the test page
+     * links on to the store once they've joined. Switch to [PLAY_URL] once the app is in production.
+     */
+    const val QR_URL = TESTING_OPT_IN_URL
+
+    /** How to get the app; every share that recommends SpeedTrack ends with these lines. */
+    fun installSteps(): String = "1. Join the test: $TESTING_OPT_IN_URL\n2. Then install: $PLAY_URL"
+
     /** Lead with what's new; keep it to a few lines so it reads as a caption under the image. */
     fun text(): String = """
         |Try SpeedTrack: a GPS speedometer and route tracker for Android.
         |• New: share your route as an image, with distance, time and speed
         |• New: offline maps for a whole country, handy on flights
         |• Live speed, GPS doctor, sensors, heart rate and Health Connect, all offline, no account
-        |
-        |1. Join the test: $TESTING_OPT_IN_URL
-        |2. Then install: $PLAY_URL
-    """.trimMargin()
+    """.trimMargin() + "\n\n" + installSteps()
 
     fun intent(context: Context): Intent {
         val send = Intent(Intent.ACTION_SEND)

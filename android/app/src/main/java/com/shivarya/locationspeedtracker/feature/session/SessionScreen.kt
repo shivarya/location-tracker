@@ -177,7 +177,13 @@ fun SessionScreen(onBack: () -> Unit, vm: SessionViewModel = hiltViewModel()) {
         TextDialog("Notes", s.notes.orEmpty(), singleLine = false, onDismiss = { editingNotes = false }) { vm.setNotes(it) }
     }
     if (shareCard.open) {
-        ShareCardSheet(shareCard, onHideEnds = vm::setHideEnds, onShare = { vm.shareCardImage() }, onDismiss = vm::closeShareCard)
+        ShareCardSheet(
+            shareCard,
+            onHideEnds = vm::setHideEnds,
+            onAppLinks = vm::setAppLinks,
+            onShare = { vm.shareCardImage() },
+            onDismiss = vm::closeShareCard,
+        )
     }
     if (activityMenu) {
         AlertDialog(
@@ -407,10 +413,16 @@ private fun LapTable(laps: List<LapEntity>, units: UnitSystem, activity: Activit
     }
 }
 
-/** Preview of the share image, with the privacy toggle; the image is drawn by ShareCardRenderer. */
+/** Preview of the share image, with the privacy and app-link switches; the image is drawn by ShareCardRenderer. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ShareCardSheet(state: ShareCardUi, onHideEnds: (Boolean) -> Unit, onShare: () -> Unit, onDismiss: () -> Unit) {
+private fun ShareCardSheet(
+    state: ShareCardUi,
+    onHideEnds: (Boolean) -> Unit,
+    onAppLinks: (Boolean) -> Unit,
+    onShare: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     // Starts hidden and opens straight to full height (no half-open stop).
     val sheet = rememberBottomSheetState(SheetValue.Hidden, setOf(SheetValue.Hidden, SheetValue.Expanded))
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
@@ -432,24 +444,38 @@ private fun ShareCardSheet(state: ShareCardUi, onHideEnds: (Boolean) -> Unit, on
                 if (state.loading) CircularProgressIndicator()
             }
             state.error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Hide start and finish", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        "Leaves the first and last 200 m off the map, so it doesn't show where you live.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Switch(checked = state.hideEnds, onCheckedChange = onHideEnds, enabled = !state.loading)
-            }
+            SheetSwitch(
+                "Hide start and finish",
+                "Leaves the first and last 200 m off the map, so it doesn't show where you live.",
+                checked = state.hideEnds,
+                enabled = !state.loading,
+                onChange = onHideEnds,
+            )
+            SheetSwitch(
+                "Add app links",
+                "A QR code on the image and the Google Play links in the message, so friends can get SpeedTrack.",
+                checked = state.appLinks,
+                enabled = !state.loading,
+                onChange = onAppLinks,
+            )
             Button(onClick = onShare, enabled = state.card != null && !state.loading, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Share, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Share")
             }
         }
+    }
+}
+
+@Composable
+private fun SheetSwitch(title: String, detail: String, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.width(12.dp))
+        Switch(checked = checked, onCheckedChange = onChange, enabled = enabled)
     }
 }
 

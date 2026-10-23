@@ -1,6 +1,11 @@
 package com.shivarya.locationspeedtracker.core.export
 
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.qrcode.QRCodeReader
 import com.shivarya.locationspeedtracker.core.data.db.SessionEntity
+import com.shivarya.locationspeedtracker.core.share.AppShare
 import com.shivarya.locationspeedtracker.core.tracking.SessionStats
 import com.shivarya.locationspeedtracker.core.tracking.TrackSample
 import com.shivarya.locationspeedtracker.core.units.UnitSystem
@@ -80,5 +85,33 @@ class ShareCardTest {
     fun `share text sums the session up in one line`() {
         val text = shareSummary(session("run", 5_210.0, 1_694.0, 4.2, 38.0), UnitSystem.Metric, showPace = true)
         assertEquals("Morning run · 5.21 km in 28:14 · avg 5:25 /km — SpeedTrack", text)
+    }
+
+    @Test
+    fun `share text ends with the install links only when app links are on`() {
+        val s = session("run", 5_210.0, 1_694.0, 4.2, 38.0)
+        val summary = shareSummary(s, UnitSystem.Metric, showPace = true)
+        assertEquals(summary, shareCaption(s, UnitSystem.Metric, showPace = true, appLinks = false))
+        val linked = shareCaption(s, UnitSystem.Metric, showPace = true, appLinks = true)
+        assertTrue(linked.startsWith("$summary\n\n"))
+        assertTrue(linked.endsWith(AppShare.installSteps()))
+    }
+
+    @Test
+    fun `QR code reads back as the app link at the card's 4 px a module`() {
+        val modules = qrModules(AppShare.QR_URL)
+        assertTrue("fits the 172 px tile less its 12 px quiet zone at 4 px a module", modules.size * 4 <= 172 - 2 * 12)
+        // Paint it as the card does, dark modules on white with a 3-module margin, and scan it.
+        val cell = 4
+        val quiet = 3 * cell
+        val side = modules.size * cell + 2 * quiet
+        val pixels = IntArray(side * side) { 0xFFFFFFFF.toInt() }
+        modules.forEachIndexed { y, row ->
+            row.forEachIndexed { x, dark ->
+                if (dark) for (dy in 0 until cell) for (dx in 0 until cell) pixels[(quiet + y * cell + dy) * side + quiet + x * cell + dx] = 0xFF140F24.toInt()
+            }
+        }
+        val image = BinaryBitmap(HybridBinarizer(RGBLuminanceSource(side, side, pixels)))
+        assertEquals(AppShare.QR_URL, QRCodeReader().decode(image).text)
     }
 }

@@ -16,7 +16,7 @@ import com.shivarya.locationspeedtracker.core.export.ExportFormat
 import com.shivarya.locationspeedtracker.core.export.ExportManager
 import com.shivarya.locationspeedtracker.core.export.ShareCard
 import com.shivarya.locationspeedtracker.core.export.ShareCardRenderer
-import com.shivarya.locationspeedtracker.core.export.shareSummary
+import com.shivarya.locationspeedtracker.core.export.shareCaption
 import com.shivarya.locationspeedtracker.core.model.ActivityType
 import com.shivarya.locationspeedtracker.core.settings.AppSettings
 import com.shivarya.locationspeedtracker.core.settings.SettingsRepository
@@ -56,10 +56,12 @@ data class SessionUi(
     val deleted: Boolean = false,
 )
 
-/** The share-image preview sheet: drawn when it opens and again whenever "Hide start and finish" changes. */
+/** The share-image preview sheet: drawn when it opens and again whenever one of its switches changes. */
 data class ShareCardUi(
     val open: Boolean = false,
     val hideEnds: Boolean = false,
+    /** QR code on the image, Play links in the message; remembered in [AppSettings.shareAppLinks]. */
+    val appLinks: Boolean = true,
     val loading: Boolean = false,
     val card: ShareCard? = null,
     val error: String? = null,
@@ -79,7 +81,7 @@ class SessionViewModel @Inject constructor(
     private val health: HealthConnectManager,
     private val export: ExportManager,
     private val cards: ShareCardRenderer,
-    settings: SettingsRepository,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
     val id: String = savedState.toRoute<SessionRoute>().id
     private val track = MutableStateFlow(Loaded())
@@ -169,12 +171,18 @@ class SessionViewModel @Inject constructor(
     private var cardJob: Job? = null
 
     fun openShareCard() {
-        _shareCard.value = ShareCardUi(open = true)
+        _shareCard.value = ShareCardUi(open = true, appLinks = ui.value.settings.shareAppLinks)
         renderCard()
     }
 
     fun setHideEnds(hide: Boolean) {
         _shareCard.update { it.copy(hideEnds = hide) }
+        renderCard()
+    }
+
+    fun setAppLinks(on: Boolean) {
+        _shareCard.update { it.copy(appLinks = on) }
+        viewModelScope.launch { settings.setShareAppLinks(on) }
         renderCard()
     }
 
@@ -189,7 +197,7 @@ class SessionViewModel @Inject constructor(
             _shareCard.update { it.copy(loading = true, error = null) }
             try {
                 val full = sessions.full(id) ?: error("the session is gone")
-                val card = cards.render(full, ui.value.settings, _shareCard.value.hideEnds)
+                val card = _shareCard.value.let { cards.render(full, ui.value.settings, it.hideEnds, it.appLinks) }
                 _shareCard.update { it.copy(loading = false, card = card) }
             } catch (e: CancellationException) {
                 throw e
@@ -203,7 +211,7 @@ class SessionViewModel @Inject constructor(
         val card = _shareCard.value.card ?: return@launch
         val s = ui.value.session ?: return@launch
         val st = ui.value.settings
-        val text = shareSummary(s, st.unitSystem, st.showPace)
+        val text = shareCaption(s, st.unitSystem, st.showPace, _shareCard.value.appLinks)
         events.send(SessionEvent.Share(export.shareIntent(listOf(ExportFile(card.file, "image/png")), "SpeedTrack session", text)))
         closeShareCard()
     }

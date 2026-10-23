@@ -66,10 +66,13 @@ Play Console's highest code).
   points through the native filter, imports `unit_preference`. `RKStorage` is left in place.
 - `core/export/` — GPX/TCX/KML/CSV/JSON writers, GPX parser (SAX, no DTDs), `ImportManager`, ZIP `BackupManager`,
   `ShareCard` (1080×1350 share image: MapLibre `MapSnapshotter` of OpenFreeMap + speed-coloured route + stats; route-only
-  fallback on the brand gradient; "Hide start and finish" trims 200 m per end).
+  fallback on the brand gradient; "Hide start and finish" trims 200 m per end; "Add app links", on by default and
+  remembered, puts a QR code to `AppShare.QR_URL` beside the title and both Play links in the message — QR via
+  zxing `core`, encoder only).
 - `core/share/AppShare` — "Share SpeedTrack": `res/raw/share_card.png` (= `branding/feature-graphic.png`; refresh it with
   the logo) + pitch + both Play links (join the closed test, then install); same pattern as Split Cash / Diet Plan.
-  Drop the join-test link once the app is in production.
+  Drop the join-test link once the app is in production (`installSteps()`, used by both shares) and point `QR_URL`
+  at `PLAY_URL`.
 - `core/perf/PerformanceTimer` — pure state machine; launch extrapolated from the first two moving fixes;
   crossings interpolated; 1-ft rollout.
 - `feature/*` — Compose screens (track, map, sensors, history, session, gps doctor, offline, perf, hr, health,

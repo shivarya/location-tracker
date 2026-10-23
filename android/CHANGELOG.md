@@ -4,6 +4,27 @@ Releases up to 1.0.9 were the Expo / React Native app (`../mobile/CHANGELOG.md`)
 rewrite, shipped as an in-place update of the same Play package (`com.shivarya.locationspeedtracker`, same upload
 key); previous sessions and the unit setting are imported on first launch.
 
+## [2.0.4] - 2026-10-23
+
+versionCode 18.
+
+### Added
+- **App links on a shared session image**: a QR code beside the title that opens the join-the-test page, and the
+  message under the image ends with both links — join the closed test, then install from Play. "Add app links" in
+  the share screen turns both off; the choice is remembered.
+- ZXing (the QR encoder) in Settings → Map data & open-source licences.
+
+### Fixed
+- A long session name no longer runs off the edge of the shared image; it ends in "…".
+
+### Google Play Notes
+```
+SpeedTrack 2.0.4
+• Shared session images now carry a QR code so friends can get SpeedTrack, and the message includes the Play links
+• Prefer not to? Turn off "Add app links" in the share screen
+• Long session names no longer run off the shared image
+```
+
 ## [2.0.3] - 2026-10-22
 
 versionCode 17.

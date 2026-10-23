@@ -150,6 +150,7 @@ dependencies {
     implementation(libs.androidx.health.connect)
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.okhttp)
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

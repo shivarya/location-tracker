@@ -26,6 +26,8 @@ mapsCompose = "9.0.1"
 maplibre = "13.7.1"
 healthConnect = "1.1.0"
 glance = "1.2.0"
+# QR encoder only (pure Java, no Android parts): the app link on the session share image.
+zxing = "3.5.3"
 profileinstaller = "1.4.1"
 junit = "4.13.2"
 
@@ -71,6 +73,7 @@ play-services-location = { module = "com.google.android.gms:play-services-locati
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapsCompose" }
 maplibre-android = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 
 junit = { module = "junit:junit", version.ref = "junit" }
 

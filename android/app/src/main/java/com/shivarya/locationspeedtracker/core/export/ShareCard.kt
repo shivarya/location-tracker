@@ -9,10 +9,14 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.text.TextPaint
+import android.text.TextUtils
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.PathParser
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.withTranslation
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import com.google.zxing.qrcode.encoder.Encoder
 import com.shivarya.locationspeedtracker.core.data.FullSession
 import com.shivarya.locationspeedtracker.core.data.dateLine
 import com.shivarya.locationspeedtracker.core.data.db.SessionEntity
@@ -21,6 +25,7 @@ import com.shivarya.locationspeedtracker.core.data.toSample
 import com.shivarya.locationspeedtracker.core.maps.MapLibreSetup
 import com.shivarya.locationspeedtracker.core.model.ActivityType
 import com.shivarya.locationspeedtracker.core.settings.AppSettings
+import com.shivarya.locationspeedtracker.core.share.AppShare
 import com.shivarya.locationspeedtracker.core.tracking.TrackSample
 import com.shivarya.locationspeedtracker.core.tracking.displayChunks
 import com.shivarya.locationspeedtracker.core.units.Format
@@ -119,25 +124,40 @@ fun shareSummary(s: SessionEntity, units: UnitSystem, showPace: Boolean): String
     return "${s.displayTitle()} · ${Format.distance(s.stats.distanceM, units)} in ${Format.duration(timeSeconds(s))} · avg $pace — SpeedTrack"
 }
 
+/** The share sheet's text: [shareSummary], then how to get the app when [appLinks] is on. */
+fun shareCaption(s: SessionEntity, units: UnitSystem, showPace: Boolean, appLinks: Boolean): String {
+    val summary = shareSummary(s, units, showPace)
+    return if (appLinks) "$summary\n\nGet SpeedTrack for Android:\n${AppShare.installSteps()}" else summary
+}
+
+/** [text] as a QR code, rows of modules (true = dark) without the quiet zone. Level M survives chat apps' JPEG. */
+fun qrModules(text: String): List<BooleanArray> {
+    val m = Encoder.encode(text, ErrorCorrectionLevel.M).matrix
+    return List(m.height) { y -> BooleanArray(m.width) { x -> m.get(x, y) == DARK } }
+}
+
+private const val DARK: Byte = 1
+
 // ---- Rendering -----------------------------------------------------------------------------------------------------
 
 data class ShareCard(val file: File, val bitmap: Bitmap)
 
 /**
  * Draws a 1080×1350 (4:5) image of a session: the route on a map (MapLibre snapshot of OpenFreeMap tiles, offline
- * from downloaded areas) or, without map data, on the brand gradient; then title, date and headline stats.
+ * from downloaded areas) or, without map data, on the brand gradient; then title, date and headline stats, and with
+ * [appLinks][render] a QR code to the app beside the title.
  */
 @Singleton
 class ShareCardRenderer @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val export: ExportManager,
 ) {
-    suspend fun render(full: FullSession, settings: AppSettings, hideEnds: Boolean): ShareCard {
+    suspend fun render(full: FullSession, settings: AppSettings, hideEnds: Boolean, appLinks: Boolean): ShareCard {
         val all = full.points.map { it.toSample() }
         val samples = if (hideEnds) trimEnds(all) else all
         val snapshot = if (samples.size >= 2) withTimeoutOrNull(SNAPSHOT_TIMEOUT_MS) { snapshot(samples) } else null
         return withContext(Dispatchers.Default) {
-            val bitmap = draw(full.session, settings, samples, snapshot, endDots = !hideEnds)
+            val bitmap = draw(full.session, settings, samples, snapshot, endDots = !hideEnds, appLinks)
             val file = export.imageFile(full.session)
             file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
             ShareCard(file, bitmap)
@@ -173,7 +193,7 @@ class ShareCardRenderer @Inject constructor(
         }
     }
 
-    private fun draw(s: SessionEntity, settings: AppSettings, samples: List<TrackSample>, snap: Snap?, endDots: Boolean): Bitmap {
+    private fun draw(s: SessionEntity, settings: AppSettings, samples: List<TrackSample>, snap: Snap?, endDots: Boolean, appLinks: Boolean): Bitmap {
         val bmp = createBitmap(W, H)
         val c = Canvas(bmp)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -205,8 +225,15 @@ class ShareCardRenderer @Inject constructor(
         paint.color = VIOLET
         c.drawRoundRect(RectF(M, MAP_H + 42f, M + chipW, MAP_H + 92f), 25f, 25f, paint)
         text(c, chip, M + 22f, MAP_H + 77f, 28f, WHITE, bold = true)
-        text(c, s.displayTitle(), M, MAP_H + 162f, 60f, WHITE, bold = true)
-        text(c, s.dateLine(), M, MAP_H + 210f, 30f, MUTED, bold = false)
+        // The QR code sits top right, so the title and date stop short of it.
+        val textW = if (appLinks) {
+            drawQr(c, W - M - QR_TILE, MAP_H + 24f)
+            W - 2 * M - QR_TILE - 28f
+        } else {
+            W - 2 * M
+        }
+        text(c, s.displayTitle(), M, MAP_H + 162f, 60f, WHITE, bold = true, maxWidth = textW)
+        text(c, s.dateLine(), M, MAP_H + 210f, 30f, MUTED, bold = false, maxWidth = textW)
 
         val stats = cardStats(s, settings.unitSystem, settings.showPace)
         val colW = (W - 2 * M) / 3f
@@ -278,16 +305,39 @@ class ShareCardRenderer @Inject constructor(
         }
     }
 
-    /** Draws [s] with its baseline at [y]; returns its width. */
-    private fun text(c: Canvas, s: String, x: Float, y: Float, size: Float, color: Int, bold: Boolean, center: Boolean = false): Float {
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    /** A white [QR_TILE] tile at [x],[y] with the QR code to [AppShare.QR_URL], and a hint under it. */
+    private fun drawQr(c: Canvas, x: Float, y: Float) {
+        val modules = qrModules(AppShare.QR_URL)
+        val n = modules.size
+        val cell = ((QR_TILE - 2 * QR_QUIET) / n).toInt() // whole pixels per module keep the edges crisp
+        val ox = x + ((QR_TILE - cell * n) / 2).toInt()
+        val oy = y + ((QR_TILE - cell * n) / 2).toInt()
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = WHITE }
+        c.drawRoundRect(RectF(x, y, x + QR_TILE, y + QR_TILE), 18f, 18f, paint)
+        paint.isAntiAlias = false
+        paint.color = PANEL
+        modules.forEachIndexed { row, line ->
+            line.forEachIndexed { col, dark ->
+                if (dark) c.drawRect(ox + col * cell, oy + row * cell, ox + (col + 1) * cell, oy + (row + 1) * cell, paint)
+            }
+        }
+        text(c, "Scan to get the app", x + QR_TILE / 2, y + QR_TILE + 28f, 22f, MUTED, bold = false, center = true)
+    }
+
+    /** Draws [s] with its baseline at [y], cut short with an ellipsis past [maxWidth]; returns the drawn width. */
+    private fun text(
+        c: Canvas, s: String, x: Float, y: Float, size: Float, color: Int, bold: Boolean,
+        center: Boolean = false, maxWidth: Float = Float.MAX_VALUE,
+    ): Float {
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = size
             this.color = color
             typeface = Typeface.create(Typeface.DEFAULT, if (bold) Typeface.BOLD else Typeface.NORMAL)
             if (center) textAlign = Paint.Align.CENTER
         }
-        c.drawText(s, x, y, paint)
-        return paint.measureText(s)
+        val fitted = if (paint.measureText(s) > maxWidth) TextUtils.ellipsize(s, paint, maxWidth, TextUtils.TruncateAt.END).toString() else s
+        c.drawText(fitted, x, y, paint)
+        return paint.measureText(fitted)
     }
 
     private companion object {
@@ -297,6 +347,9 @@ class ShareCardRenderer @Inject constructor(
         const val RATIO = 2
         const val PAD = 70
         const val M = 56f
+        /** The QR code's white tile, and its quiet zone (3 modules at 4 px each). */
+        const val QR_TILE = 172f
+        const val QR_QUIET = 12f
         const val SNAPSHOT_TIMEOUT_MS = 10_000L
         const val ROAD = "M77,34 H50 C37,34 37,54 50,54 H58 C71,54 71,74 58,74 H31"
         const val WHITE = android.graphics.Color.WHITE

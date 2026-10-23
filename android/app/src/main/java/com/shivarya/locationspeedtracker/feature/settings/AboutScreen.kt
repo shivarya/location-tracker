@@ -22,6 +22,7 @@ import com.shivarya.locationspeedtracker.ui.components.SectionCard
 private val credits = listOf(
     "Map data" to "Online maps © Google. Offline maps: © OpenStreetMap contributors (ODbL), © OpenMapTiles, served by OpenFreeMap.",
     "MapLibre Native" to "Offline map renderer — BSD 2-Clause licence.",
+    "ZXing" to "QR code on shared session images — Apache License 2.0.",
     "Google Play services" to "Fused location, activity recognition and Maps SDK — Google APIs Terms of Service.",
     "Android Jetpack, Material 3, Kotlin" to "Apache License 2.0.",
     "Geoid model" to "Mean-sea-level altitude from androidx.core altitude (EGM2008) — Apache License 2.0.",
