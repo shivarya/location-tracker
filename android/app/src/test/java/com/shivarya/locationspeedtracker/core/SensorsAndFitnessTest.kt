@@ -143,5 +143,7 @@ class SensorsAndFitnessTest {
         assertEquals(7.99, offlineZoomCap(areas, 19.07, 72.88)!!, 1e-9)  // Mumbai: overview only
         assertNull(offlineZoomCap(areas, 51.5, -0.12))                  // London: nothing downloaded
         assertNull(offlineZoomCap(listOf(area(india.bounds, MapDetail.Overview, complete = false)), 19.0, 73.0))
+        // The middle of the screen only touches the city area: zooming in towards it keeps going.
+        assertEquals(14.99, offlineZoomCap(areas, Bounds(13.05, 77.65, 13.4, 78.0))!!, 1e-9)
     }
 }

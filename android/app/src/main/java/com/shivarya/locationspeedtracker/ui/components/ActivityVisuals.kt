@@ -9,8 +9,10 @@ import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Train
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -29,6 +31,8 @@ val ActivityType.icon: ImageVector
         ActivityType.Cycle -> Icons.AutoMirrored.Filled.DirectionsBike
         ActivityType.Drive -> Icons.Filled.DirectionsCar
         ActivityType.Motorbike -> Icons.Filled.TwoWheeler
+        ActivityType.Train -> Icons.Filled.Train
+        ActivityType.Flight -> Icons.Filled.Flight
         ActivityType.Other -> Icons.Filled.Speed
     }
 

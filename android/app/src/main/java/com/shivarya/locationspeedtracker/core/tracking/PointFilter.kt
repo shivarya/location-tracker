@@ -42,6 +42,11 @@ data class FilterConfig(
     val maxAccuracyM: Double = 40.0,
     val minIntervalMs: Long = 800,
     val maxSpeedMps: Double = 110.0,
+    /**
+     * Ceiling for speeds that the Doppler reading and the position change both vouch for. Above [maxSpeedMps] an
+     * unconfirmed speed is a glitch, but a confirmed one in a vehicle is real (see [ActivityType.mayRideVehicle]).
+     */
+    val confirmedMaxSpeedMps: Double = maxSpeedMps,
     val movingThresholdMps: Double = 0.5,
     val maxAccelMps2: Double = 12.0,
     val accelSpeedFloorMps: Double = 8.0,
@@ -56,6 +61,7 @@ data class FilterConfig(
         fun forActivity(activity: ActivityType, maxAccuracyM: Double) = FilterConfig(
             maxAccuracyM = maxAccuracyM,
             maxSpeedMps = activity.maxValidSpeedMps,
+            confirmedMaxSpeedMps = if (activity.mayRideVehicle) ActivityType.ABSOLUTE_MAX_MPS else activity.maxValidSpeedMps,
             movingThresholdMps = activity.movingThresholdMps,
         )
     }
@@ -107,7 +113,7 @@ class PointFilter(var config: FilterConfig) {
         if (p == null) {
             prev = fix
             anchor = fix
-            prevSpeed = validGpsSpeed(fix) ?: 0.0
+            prevSpeed = validGpsSpeed(fix, null) ?: 0.0
             rejectStreak = 0
             return Verdict.Accepted(0.0, prevSpeed, prevSpeed >= config.movingThresholdMps, 0.0, firstOfSegment = true)
         }
@@ -118,11 +124,15 @@ class PointFilter(var config: FilterConfig) {
 
         val dPrev = Geo.distance(p.lat, p.lon, fix.lat, fix.lon)
         val derived = dPrev / dt
-        val gps = validGpsSpeed(fix)
+        val gps = validGpsSpeed(fix, Agreement(derived, acc(fix) / dt))
 
-        if (derived > config.maxSpeedMps) return reject(RejectReason.SpeedSpike, fix)
+        // Past the activity's ceiling only a speed both Doppler and the positions agree on survives — e.g. the
+        // cruise of a flight recorded as General, which used to be dropped 4 fixes in 5 (the 5th re-anchored at 0).
+        if (derived > config.maxSpeedMps && (derived > config.confirmedMaxSpeedMps || gps == null)) {
+            return reject(RejectReason.SpeedSpike, fix)
+        }
         // Doppler says we're barely moving but the position leapt: multipath / Wi-Fi fix jump.
-        if (gps != null && derived - gps > max(config.speedAgreementMps * 2, 8.0) + acc(fix) / dt) {
+        if (gps != null && derived - gps > tolerance(gps, acc(fix) / dt)) {
             return reject(RejectReason.PositionJump, fix)
         }
 
@@ -151,7 +161,23 @@ class PointFilter(var config: FilterConfig) {
         return Verdict.Accepted(added, speed, speed >= config.movingThresholdMps, dt, firstOfSegment = false)
     }
 
-    private fun validGpsSpeed(f: Fix): Double? = f.speed?.takeIf { it >= 0 && it <= config.maxSpeedMps }
+    private class Agreement(val derivedMps: Double, val accuracyMps: Double)
+
+    /**
+     * Doppler/position disagreement still within reason. Grows with speed: at airliner speeds a few hundred ms of
+     * fix-timing jitter alone is a 50+ m/s mismatch.
+     */
+    private fun tolerance(gps: Double, accuracyMps: Double) = max(max(config.speedAgreementMps * 2, 8.0), gps * 0.3) + accuracyMps
+
+    /**
+     * The fix's Doppler speed if usable. Above the activity ceiling it must agree with the position change ([a]);
+     * with nothing to compare against (first fix, re-anchor) it must stay under the ceiling.
+     */
+    private fun validGpsSpeed(f: Fix, a: Agreement?): Double? {
+        val s = f.speed?.takeIf { it >= 0 && it <= config.confirmedMaxSpeedMps } ?: return null
+        if (s <= config.maxSpeedMps) return s
+        return s.takeIf { a != null && abs(a.derivedMps - s) <= tolerance(s, a.accuracyMps) }
+    }
 
     /** Count the rejection; past the streak limit, re-anchor on this fix (adds no distance) instead. */
     private fun reject(reason: RejectReason, fix: Fix): Verdict {
@@ -159,7 +185,9 @@ class PointFilter(var config: FilterConfig) {
         if (rejectStreak < config.maxRejectStreak) return Verdict.Rejected(reason)
         prev = fix
         anchor = fix
-        prevSpeed = validGpsSpeed(fix) ?: 0.0
+        // Nothing to check a fast Doppler speed against here, but reporting 0 makes the speedometer blink to 0 and
+        // can look like a stop (a "landing" mid-flight); in a vehicle any speed under the hard ceiling is kept.
+        prevSpeed = fix.speed?.takeIf { it >= 0 && it <= config.confirmedMaxSpeedMps } ?: 0.0
         rejectStreak = 0
         return Verdict.Accepted(0.0, prevSpeed, prevSpeed >= config.movingThresholdMps, 0.0, firstOfSegment = true)
     }

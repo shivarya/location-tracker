@@ -21,13 +21,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.shivarya.locationspeedtracker.core.geo.Bounds
 import com.shivarya.locationspeedtracker.core.maps.MapLibreSetup
 import com.shivarya.locationspeedtracker.core.maps.OfflineArea
 import com.shivarya.locationspeedtracker.core.maps.OfflineRegionsEntryPoint
+import com.shivarya.locationspeedtracker.core.maps.StyleTweaks
 import com.shivarya.locationspeedtracker.core.maps.offlineZoomCap
 import com.shivarya.locationspeedtracker.core.tracking.Fix
 import com.shivarya.locationspeedtracker.core.tracking.TrackSample
 import dagger.hilt.android.EntryPointAccessors
+import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
@@ -70,6 +73,9 @@ fun MapLibreTrackMap(
     highlight: TrackSample? = null,
     showEndpoints: Boolean = false,
     gesturesEnabled: Boolean = true,
+    northUpKey: Int = 0,
+    onBearingChange: (Float) -> Unit = {},
+    showCompass: Boolean = true,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current.density
@@ -104,6 +110,7 @@ fun MapLibreTrackMap(
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var loaded by remember { mutableStateOf<Style?>(null) }
     val panCallback by rememberUpdatedState(onUserPan)
+    val bearingCallback by rememberUpdatedState(onBearingChange)
 
     // Offline, keep the zoom within what the downloaded areas hold at the camera target, or the map goes blank.
     val offline = !LocalMapEnvironment.current.online
@@ -116,13 +123,22 @@ fun MapLibreTrackMap(
         mapView.getMapAsync { m ->
             m.uiSettings.apply {
                 isLogoEnabled = false
-                isCompassEnabled = true
+                isCompassEnabled = showCompass
                 setAllGesturesEnabled(gesturesEnabled)
             }
             m.addOnCameraMoveStartedListener { reason ->
                 if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) panCallback()
             }
-            m.addOnCameraIdleListener { applyZoomCap(m, capAreas) }
+            // Re-cap while the camera moves, not only when it settles: a pinch from an Overview area into a Streets
+            // one then carries on zooming instead of stopping at the overview's level until a second pinch.
+            m.addOnCameraMoveListener {
+                applyZoomCap(m, capAreas)
+                bearingCallback(m.cameraPosition.bearing.toFloat())
+            }
+            m.addOnCameraIdleListener {
+                applyZoomCap(m, capAreas)
+                bearingCallback(m.cameraPosition.bearing.toFloat())
+            }
             val first = current?.let { LatLng(it.lat, it.lon) } ?: chunks.firstOrNull()?.firstOrNull()?.let { LatLng(it.lat, it.lon) }
             m.moveCamera(CameraUpdateFactory.newLatLngZoom(first ?: LatLng(20.0, 78.0), if (first != null) 15.5 else 3.0))
             map = m
@@ -131,10 +147,16 @@ fun MapLibreTrackMap(
     LaunchedEffect(map, capAreas) {
         map?.let { applyZoomCap(it, capAreas) }
     }
+    LaunchedEffect(map, northUpKey) {
+        val m = map ?: return@LaunchedEffect
+        if (northUpKey == 0) return@LaunchedEffect
+        m.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder(m.cameraPosition).bearing(0.0).tilt(0.0).build()), 400)
+    }
     LaunchedEffect(map, dark) {
         val m = map ?: return@LaunchedEffect
         loaded = null
         m.setStyle(Style.Builder().fromUri(MapLibreSetup.style(dark))) { s ->
+            StyleTweaks.apply(s, dark)
             s.addImage(IMG_ARROW, arrowBitmap(density, accent.toArgb()))
             s.addSource(GeoJsonSource(SRC_ROUTE))
             s.addSource(GeoJsonSource(SRC_PTS))
@@ -239,8 +261,16 @@ internal fun MapView.keepGesturesFromParent() = setOnTouchListener { v, e ->
 }
 
 private fun applyZoomCap(m: MapLibreMap, areas: List<OfflineArea>?) {
-    val t = m.cameraPosition.target ?: return
-    m.setMaxZoomPreference(areas?.let { offlineZoomCap(it, t.latitude, t.longitude) } ?: MAX_MAP_ZOOM)
+    if (areas == null) {
+        m.setMaxZoomPreference(MAX_MAP_ZOOM)
+        return
+    }
+    // The middle half of what's on screen.
+    val v = m.projection.visibleRegion.latLngBounds
+    val dLat = (v.latitudeNorth - v.latitudeSouth) / 4
+    val dLon = (v.longitudeEast - v.longitudeWest) / 4
+    val middle = Bounds(v.latitudeSouth + dLat, v.longitudeWest + dLon, v.latitudeNorth - dLat, v.longitudeEast - dLon)
+    m.setMaxZoomPreference(offlineZoomCap(areas, middle) ?: MAX_MAP_ZOOM)
 }
 
 /** Route as short coloured LineStrings (~8 points each) — MapLibre colours per feature, not per vertex. */

@@ -60,12 +60,14 @@ class FitnessAddon @Inject constructor(private val hr: HeartRateMonitor) : Sessi
         activity = ctx.activity
         profile = ctx.settings.profile
         age = (Calendar.getInstance().get(Calendar.YEAR) - profile.birthYear).coerceIn(10, 100)
-        autoPause = ctx.settings.autoPause
+        // Flights and train journeys are recorded end to end: holds, stations and signal stops are part of the trip,
+        // and GPS through a window or in a tunnel can't see movement half the time.
+        autoPause = ctx.settings.autoPause && activity != ActivityType.Flight && activity != ActivityType.Train
         kcal = 0.0
         stillSince = null
         movingFixes = 0
         window.clear()
-        _live.value = if (activity.motorized) null else FitnessLive()
+        _live.value = if (activity.humanPowered) FitnessLive() else null
     }
 
     override fun onFix(fix: Fix, accepted: Verdict.Accepted?, live: LiveState) {
@@ -92,7 +94,7 @@ class FitnessAddon @Inject constructor(private val hr: HeartRateMonitor) : Sessi
                 }
             }
         }
-        if (accepted != null && accepted.dtS > 0 && accepted.moving && !activity.motorized) {
+        if (accepted != null && accepted.dtS > 0 && accepted.moving && activity.humanPowered) {
             val alt = fix.bestAltitude
             if (alt != null) {
                 window.addLast(live.stats.distanceM to alt)
@@ -110,7 +112,7 @@ class FitnessAddon @Inject constructor(private val hr: HeartRateMonitor) : Sessi
     private fun pauseDelayMs() = if (activity.onFoot || activity == ActivityType.Cycle) 6_000L else 10_000L
 
     override fun finish(session: SessionEntity): SessionEntity =
-        if (activity.motorized || kcal <= 0.5) session else session.copy(calories = kcal)
+        if (!activity.humanPowered || kcal <= 0.5) session else session.copy(calories = kcal)
 
     override fun onStop() {
         ctx = null

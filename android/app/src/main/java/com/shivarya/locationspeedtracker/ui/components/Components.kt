@@ -42,6 +42,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -161,11 +163,14 @@ fun StatTile(
                 )
             }
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(
+                // Shrinks to fit a third of a phone width ("Descending", "1,234.56") instead of clipping.
+                val valueStyle = if (emphasis) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge
+                BasicText(
                     value,
-                    style = if (emphasis) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f, fill = false),
+                    style = valueStyle.copy(fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface),
                     maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 11.sp, maxFontSize = valueStyle.fontSize),
                 )
                 if (unit != null) {
                     Spacer(Modifier.width(4.dp))

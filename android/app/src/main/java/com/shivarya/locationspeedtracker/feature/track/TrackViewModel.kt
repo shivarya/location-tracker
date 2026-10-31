@@ -9,6 +9,8 @@ import com.shivarya.locationspeedtracker.core.location.NetworkMonitor
 import com.shivarya.locationspeedtracker.core.activity.ActivityRecognizer
 import com.shivarya.locationspeedtracker.core.activity.DetectedMotion
 import com.shivarya.locationspeedtracker.core.fitness.FitnessAddon
+import com.shivarya.locationspeedtracker.core.flight.FlightAddon
+import com.shivarya.locationspeedtracker.core.flight.FlightSummary
 import com.shivarya.locationspeedtracker.core.fitness.FitnessLive
 import com.shivarya.locationspeedtracker.core.hr.HeartRateMonitor
 import com.shivarya.locationspeedtracker.core.model.ActivityType
@@ -52,6 +54,8 @@ data class TrackUi(
     val sensors: SensorLive? = null,
     val heartRate: Int? = null,
     val calories: Double? = null,
+    /** Flight sessions only: phase, takeoff, time aloft, GNSS vertical speed. */
+    val flight: FlightSummary? = null,
     /** Activity Recognition's guess, when it differs from the selected type (idle only). */
     val suggestion: ActivityType? = null,
 )
@@ -67,6 +71,7 @@ class TrackViewModel @Inject constructor(
     network: NetworkMonitor,
     sensorRecorder: SensorRecorder,
     fitness: FitnessAddon,
+    flight: FlightAddon,
     hr: HeartRateMonitor,
     private val recognizer: ActivityRecognizer,
 ) : ViewModel() {
@@ -90,9 +95,9 @@ class TrackViewModel @Inject constructor(
         controller.state,
         combine(settings, selected) { s, sel -> s to (sel ?: s.lastActivity) },
         combine(previewFix, sensorRecorder.live, fitness.live, hr.state, recognizer.detected) { p, sl, fl, h, d -> Extras(p, sl, fl, h.liveBpm(), d) },
-        network.online,
+        combine(network.online, flight.live) { o, f -> o to f },
         ticker,
-    ) { live, (s, sel), x, online, now ->
+    ) { live, (s, sel), x, (online, flightLive), now ->
         val preview = x.preview
         val sensorLive = x.sensors
         val a = live.active
@@ -108,6 +113,7 @@ class TrackViewModel @Inject constructor(
             sensors = sensorLive.takeIf { a != null },
             heartRate = x.bpm,
             calories = x.fitness?.calories?.takeIf { a != null },
+            flight = flightLive.takeIf { a != null },
             suggestion = x.detected?.type?.takeIf { a == null && it != sel && now - x.detected.at < 10 * 60_000 },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrackUi())

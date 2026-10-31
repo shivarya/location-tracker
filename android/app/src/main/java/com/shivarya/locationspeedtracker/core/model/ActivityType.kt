@@ -24,9 +24,29 @@ enum class ActivityType(
     Cycle("cycle", "Cycle", 30.0, 1.0, onFoot = false, motorized = false, gaugeMaxKmh = 60),
     Drive("drive", "Drive", 110.0, 1.5, onFoot = false, motorized = true, gaugeMaxKmh = 220),
     Motorbike("motorbike", "Motorbike", 110.0, 1.5, onFoot = false, motorized = true, gaugeMaxKmh = 220),
+    // High-speed rail runs at up to 350 km/h (a maglev 430, which a Doppler-confirmed fix still gets past).
+    Train("train", "Train", 100.0, 1.0, onFoot = false, motorized = true, gaugeMaxKmh = 200),
+    // Airliner ground speed with a jet-stream tailwind tops out near 1 200 km/h; everything else caps at ~400 km/h.
+    // 340.0 = ABSOLUTE_MAX_MPS (an enum entry can't read its companion).
+    Flight("flight", "Flight", 340.0, 2.0, onFoot = false, motorized = true, gaugeMaxKmh = 1000),
     Other("other", "General", 110.0, 0.5, onFoot = false, motorized = false, gaugeMaxKmh = 160);
 
+    /** Muscle-powered: calories are worth estimating. Engines, aircraft and "General" (often a passenger) are not. */
+    val humanPowered: Boolean get() = !motorized && this != Other
+
+    /**
+     * Activities where the phone may be riding in a vehicle, so a Doppler-confirmed speed past [maxValidSpeedMps]
+     * is real (a fast train, a flight recorded as General) rather than a glitch. Foot and cycle sessions keep their
+     * ceiling: a run that ends in a car shouldn't gain the car's distance.
+     */
+    val mayRideVehicle: Boolean get() = motorized || this == Other
+
     companion object {
+        /** Ground speed nothing but an aircraft reaches (≈ 450 km/h): sustained, a session switches to [Flight]. */
+        const val AIRBORNE_MPS = 125.0
+        /** Fastest speed any session accepts, Doppler-confirmed or not (≈ 1 220 km/h). */
+        const val ABSOLUTE_MAX_MPS = 340.0
+
         fun from(stored: String?): ActivityType = entries.firstOrNull { it.stored == stored } ?: Other
     }
 }

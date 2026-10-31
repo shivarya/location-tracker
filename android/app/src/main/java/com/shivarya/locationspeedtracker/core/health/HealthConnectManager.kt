@@ -65,14 +65,14 @@ class HealthConnectManager @Inject constructor(@param:ApplicationContext private
     suspend fun canWrite() = granted().contains(HealthPermission.getWritePermission(ExerciseSessionRecord::class))
     suspend fun canReadHeartRate() = granted().contains(HealthPermission.getReadPermission(HeartRateRecord::class))
 
-    /** Exercise type for an activity, or null when Health Connect has none (drives, motorbike rides). */
+    /** Exercise type for an activity, or null when Health Connect has none (drives, rides, trains, flights). */
     fun exerciseType(a: ActivityType): Int? = when (a) {
         ActivityType.Walk -> ExerciseSessionRecord.EXERCISE_TYPE_WALKING
         ActivityType.Run -> ExerciseSessionRecord.EXERCISE_TYPE_RUNNING
         ActivityType.Hike -> ExerciseSessionRecord.EXERCISE_TYPE_HIKING
         ActivityType.Cycle -> ExerciseSessionRecord.EXERCISE_TYPE_BIKING
         ActivityType.Other -> ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT
-        ActivityType.Drive, ActivityType.Motorbike -> null
+        ActivityType.Drive, ActivityType.Motorbike, ActivityType.Train, ActivityType.Flight -> null
     }
 
     /**

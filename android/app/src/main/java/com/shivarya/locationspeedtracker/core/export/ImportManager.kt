@@ -169,6 +169,8 @@ class ImportManager @Inject constructor(
                 "cycl" in t || "bik" in t || "ride" in t -> ActivityType.Cycle
                 "motor" in t -> ActivityType.Motorbike
                 "driv" in t || "car" in t -> ActivityType.Drive
+                "fly" in t || "flight" in t || "plane" in t -> ActivityType.Flight
+                "train" in t || "rail" in t -> ActivityType.Train
                 else -> ActivityType.Other
             }
         }

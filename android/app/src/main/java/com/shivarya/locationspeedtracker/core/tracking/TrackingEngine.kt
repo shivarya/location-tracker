@@ -8,9 +8,11 @@ import com.shivarya.locationspeedtracker.core.data.db.SessionEntity
 import com.shivarya.locationspeedtracker.core.data.db.SessionState
 import com.shivarya.locationspeedtracker.core.data.db.TrackPointEntity
 import com.shivarya.locationspeedtracker.core.data.toSample
+import com.shivarya.locationspeedtracker.core.flight.AirborneDetector
 import com.shivarya.locationspeedtracker.core.location.LocationSources
 import com.shivarya.locationspeedtracker.core.model.ActivityType
 import com.shivarya.locationspeedtracker.core.settings.AppSettings
+import com.shivarya.locationspeedtracker.core.settings.LocationSourceMode
 import com.shivarya.locationspeedtracker.core.settings.SettingsRepository
 import com.shivarya.locationspeedtracker.core.units.Units
 import dagger.Module
@@ -93,6 +95,8 @@ class TrackingEngine @Inject constructor(
     private val finishedHooks: Set<@JvmSuppressWildcards SessionFinishedHook>,
 ) {
     private val dispatcher = Dispatchers.Default.limitedParallelism(1)
+    /** For work that tears down the session scope it was triggered from (the switch to Flight). */
+    private val engineScope = CoroutineScope(SupervisorJob() + dispatcher)
     private val _state = MutableStateFlow(LiveState())
     val state: StateFlow<LiveState> = _state.asStateFlow()
 
@@ -115,6 +119,9 @@ class TrackingEngine @Inject constructor(
         var startLon: Double?,
         var hasManualLaps: Boolean,
     ) {
+        /** Spots a flight recorded as anything else; null once it is a Flight. */
+        val airborne: AirborneDetector? = if (activity == ActivityType.Flight) null else AirborneDetector()
+        var switching = false
         val pendingPoints = ArrayList<TrackPointEntity>()
         val pendingLaps = ArrayList<LapEntity>()
     }
@@ -142,6 +149,12 @@ class TrackingEngine @Inject constructor(
     suspend fun recover(): Boolean = withContext(dispatcher) {
         if (state.value.active != null) return@withContext true
         val row = sessions.unfinished() ?: return@withContext false
+        reopen(row, carry = null)
+        true
+    }
+
+    /** Rebuild the recorder for an unfinished session row and start recording into it again; [carry] keeps the UI's laps. */
+    private suspend fun reopen(row: SessionEntity, carry: LiveState?) {
         val s = settingsRepository.current()
         val now = System.currentTimeMillis()
         val pts = sessions.points(row.id)
@@ -167,10 +180,46 @@ class TrackingEngine @Inject constructor(
             status = TrackingStatus.Active(row.id, activity, row.startTime, paused = wasPaused, pausedMs = pausedMs, pausedAt = if (wasPaused) now else null),
             stats = row.stats,
             track = ChunkedTrack.of(pts.map { it.toSample() }),
+            fix = carry?.fix,
+            speedMps = carry?.speedMps,
+            currentSplitIndex = carry?.currentSplitIndex ?: 0,
+            lastSplit = carry?.lastSplit,
+            laps = carry?.laps.orEmpty(),
         )
         begin(r)
-        Log.i(TAG, "Recovered session ${row.id} (${pts.size} points)")
-        true
+        Log.i(TAG, "Reopened session ${row.id} as ${activity.label} (${pts.size} points)")
+    }
+
+    /**
+     * Carry on recording [r]'s session as [to]: everything that depends on the activity (filter, location source,
+     * barometer, auto-pause, add-ons) is rebuilt, exactly as after a sticky restart. The live state stays active
+     * throughout, so the service and the UI never see the session end.
+     */
+    private suspend fun switchActivity(r: Recorder, to: ActivityType) = withContext(dispatcher) {
+        val a = state.value.active ?: return@withContext
+        if (recorder !== r || a.activity == to || a.paused) return@withContext
+        endSessionScope()
+        flushPending(r)
+        val now = System.currentTimeMillis()
+        val elapsedMs = a.elapsedMs(now)
+        val row = sessions.get(r.sessionId) ?: return@withContext
+        // A Stop that slipped in while we were suspended has already finished the row.
+        if (recorder !== r) return@withContext
+        // Fold in what the add-ons measured so far (peak G, heart rate…); they restart for the new activity.
+        val saved = addons.fold(
+            row.copy(
+                activity = to.stored,
+                elapsedS = elapsedMs / 1000.0,
+                pausedS = (now - a.startTime - elapsedMs) / 1000.0,
+                stats = r.stats.stats,
+                startLat = r.startLat ?: row.startLat,
+                startLon = r.startLon ?: row.startLon,
+            ),
+        ) { acc, addon -> addon.finish(acc) }
+        sessions.update(saved)
+        addons.forEach { it.onStop() }
+        recorder = null
+        reopen(saved, state.value.copy(lastSplit = null))
     }
 
     suspend fun pause(auto: Boolean = false) = withContext(dispatcher) {
@@ -278,15 +327,23 @@ class TrackingEngine @Inject constructor(
         manualIndex: Int,
         at: Long,
     ): Recorder {
-        val acc = StatsAccumulator(activity.movingThresholdMps).apply { restore(stats) }
+        val flight = activity == ActivityType.Flight
+        // Through an aircraft window fixes are ±30–80 m and altitude worse; at 250 m/s neither matters.
+        val acc = StatsAccumulator(
+            activity.movingThresholdMps,
+            elevationThresholdM = if (flight) 15.0 else 4.0,
+            maxVerticalAccuracyM = if (flight) 150.0 else 25.0,
+        ).apply { restore(stats) }
+        val maxAccuracy = s.accuracyThresholdM.toDouble().let { if (flight) maxOf(it, FLIGHT_MAX_ACCURACY_M) else it }
         val split = Units.splitLengthM(s.unitSystem)
         return Recorder(
             sessionId = id,
             activity = activity,
             settings = s,
-            filter = PointFilter(FilterConfig.forActivity(activity, s.accuracyThresholdM.toDouble())),
+            filter = PointFilter(FilterConfig.forActivity(activity, maxAccuracy)),
             stats = acc,
-            autoSplits = if (s.autoSplits) SplitTracker(SplitKind.Auto, split).apply { start(at, stats, lapIndex) } else null,
+            // A split every km of a 1 500 km flight is noise (and a banner every 4 s); flights get the flight panel instead.
+            autoSplits = if (s.autoSplits && !flight) SplitTracker(SplitKind.Auto, split).apply { start(at, stats, lapIndex) } else null,
             manualLaps = SplitTracker(SplitKind.Manual, 0.0).apply { start(at, stats, manualIndex) },
             seq = seq,
             segment = segment,
@@ -309,7 +366,10 @@ class TrackingEngine @Inject constructor(
         }
         addons.forEach { runCatching { it.onStart(ctx) }.onFailure { e -> Log.w(TAG, "Add-on failed to start", e) } }
         locationJob = scope.launch {
-            sources.forMode(r.settings.locationSource).updates(r.settings.intervalMs)
+            // In airplane mode there's no network to assist, and in-flight Wi-Fi can place the fused provider at the
+            // ground station: a flight reads the GNSS chip directly.
+            val mode = if (r.activity == ActivityType.Flight) LocationSourceMode.Gnss else r.settings.locationSource
+            sources.forMode(mode).updates(r.settings.intervalMs)
                 .catch { e ->
                     Log.w(TAG, "Location updates failed", e)
                     _state.update { it.copy(error = e.message ?: "Location unavailable") }
@@ -333,6 +393,11 @@ class TrackingEngine @Inject constructor(
             _state.update { it.copy(fix = fix, speedMps = fix.speed) }
             addons.forEach { it.onFix(fix, null, state.value) }
             return
+        }
+        if (!r.switching && r.airborne?.offer(fix) == true) {
+            r.switching = true
+            Log.i(TAG, "Airliner speed for ${AirborneDetector.SUSTAIN_MS / 1000} s: recording ${r.sessionId} as a flight")
+            engineScope.launch { switchActivity(r, ActivityType.Flight) }
         }
         when (val v = r.filter.offer(fix)) {
             is Verdict.Rejected -> {
@@ -431,6 +496,7 @@ class TrackingEngine @Inject constructor(
     private companion object {
         const val TAG = "TrackingEngine"
         const val FLUSH_EVERY_MS = 5_000L
+        const val FLIGHT_MAX_ACCURACY_M = 100.0
     }
 }
 

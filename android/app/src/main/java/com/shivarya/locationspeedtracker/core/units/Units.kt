@@ -146,7 +146,7 @@ object Format {
     }
 
     fun altitude(m: Double?, system: UnitSystem): String =
-        if (m == null) "–" else Units.altitude(m, system).format(0)
+        if (m == null) "–" else Units.altitude(m, system).let { "${it.value.grouped()} ${it.unit}" }
 
     fun coordinate(deg: Double, positive: Char, negative: Char): String =
         "${String.format(Locale.US, "%.5f", abs(deg))}° ${if (deg >= 0) positive else negative}"
@@ -158,6 +158,9 @@ object Format {
         return dirs[idx]
     }
 }
+
+/** Whole number with the locale's grouping (12,346 / 12.346 / 12 346): altitudes, steps. */
+fun Double.grouped(): String = java.text.NumberFormat.getIntegerInstance(Locale.getDefault()).format(roundToLong())
 
 /** Fixed decimals; a small negative that rounds to zero prints as "0", not "-0" (e.g. vertical speed at rest). */
 fun Double.fmt(decimals: Int): String {

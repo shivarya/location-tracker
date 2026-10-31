@@ -78,6 +78,51 @@ class PointFilterTest {
     }
 
     @Test
+    fun `airliner cruise speed is kept for flights, and for a drive only when Doppler confirms it`() {
+        val cruise = line(120, 250.0, acc = 4.0) // 900 km/h
+        val (stats, verdicts) = run(cruise, ActivityType.Flight)
+        assertTrue(verdicts.drop(1).all { it is Verdict.Accepted })
+        assertEquals(30_000.0, stats.distanceM, 300.0)
+        assertEquals(250.0, stats.maxSpeedMps, 0.5)
+        // A drive that is really a flight (the engine then switches it to Flight) keeps a confirmed cruise…
+        assertEquals(30_000.0, run(cruise, ActivityType.Drive).first.distanceM, 300.0)
+        // …but positions racing at 900 km/h without a Doppler speed to back them are still a glitch.
+        assertEquals(0.0, run(cruise.map { it.copy(speed = null) }, ActivityType.Drive).first.distanceM, 1.0)
+    }
+
+    @Test
+    fun `a high-speed train at 300 km_h is kept`() {
+        val (stats, verdicts) = run(line(120, 83.3, acc = 6.0), ActivityType.Train)
+        assertTrue(verdicts.drop(1).all { it is Verdict.Accepted })
+        assertEquals(10_000.0, stats.distanceM, 150.0)
+    }
+
+    @Test
+    fun `a flight recorded as General keeps its cruise (Doppler and positions agree)`() {
+        val (stats, verdicts) = run(line(300, 240.0, acc = 8.0), ActivityType.Other)
+        assertTrue(verdicts.drop(1).all { it is Verdict.Accepted })
+        assertEquals(72_000.0, stats.distanceM, 500.0)
+        assertEquals(240.0, stats.maxSpeedMps, 0.5)
+    }
+
+    @Test
+    fun `an unconfirmed leap is still a spike for General, and a run never takes a vehicle's speed`() {
+        // Positions say 240 m/s but Doppler says walking pace: a fix jump, not a flight.
+        val jumpy = line(60, 240.0, acc = 8.0).map { it.copy(speed = 1.4) }
+        assertEquals(0.0, run(jumpy, ActivityType.Other).first.distanceM, 1.0)
+        assertEquals(0.0, run(line(60, 30.0), ActivityType.Run).first.distanceM, 1.0)
+    }
+
+    @Test
+    fun `fix-timing jitter at cruise speed does not drop distance`() {
+        // Positions exactly 250 m apart, delivered up to ±400 ms off the 1 s beat (as an emulator, or a busy phone, does).
+        val rnd = Random(7)
+        val cruise = line(300, 250.0, acc = 6.0).map { it.copy(time = it.time + (rnd.nextDouble() * 800 - 400).toLong()) }
+        val (stats, _) = run(cruise, ActivityType.Flight)
+        assertEquals(75_000.0, stats.distanceM, 1_500.0)
+    }
+
+    @Test
     fun `a genuine jump (tunnel exit) re-anchors after a streak of rejections`() {
         val a = line(10, 1.4)
         // 2 km further on, still walking: every fix looks like a spike relative to the old anchor.

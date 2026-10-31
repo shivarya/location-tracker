@@ -64,7 +64,18 @@ data class OfflineArea(
  * nothing past an area's last level, so maps stay just under the next one (an Overview area stops below z8).
  */
 fun offlineZoomCap(areas: List<OfflineArea>, lat: Double, lon: Double): Double? =
-    areas.filter { it.complete && lat in it.bounds.south..it.bounds.north && lon in it.bounds.west..it.bounds.east }
+    offlineZoomCap(areas, Bounds(lat, lon, lat, lon))
+
+/**
+ * Deepest zoom any downloaded area overlapping [view] can draw. Maps pass the middle of the screen, not just its centre
+ * point: with an Overview of a country and a Streets area of one town, zooming towards the town keeps going once it
+ * fills the middle of the map, instead of stalling at the Overview's level until the centre lands exactly inside it.
+ */
+fun offlineZoomCap(areas: List<OfflineArea>, view: Bounds): Double? =
+    areas.filter {
+        it.complete && it.bounds.south <= view.north && it.bounds.north >= view.south &&
+            it.bounds.west <= view.east && it.bounds.east >= view.west
+    }
         .maxOfOrNull { it.detail.maxZoom }
         ?.let { it + 0.99 }
 
@@ -88,7 +99,16 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
         OfflineManager.getInstance(context)
     }
 
-    private class Tracked(val region: OfflineRegion, val meta: AreaMeta, var status: OfflineRegionStatus? = null, var active: Boolean = false, var error: String? = null)
+    private class Tracked(
+        val region: OfflineRegion,
+        val meta: AreaMeta,
+        var status: OfflineRegionStatus? = null,
+        var active: Boolean = false,
+        /** Why the download stopped (size or tile limit); stays until the user resumes. */
+        var error: String? = null,
+        /** A transient fetch failure MapLibre is retrying; cleared as soon as the download makes progress again. */
+        var stall: String? = null,
+    )
 
     private val tracked = LinkedHashMap<Long, Tracked>()
     private val _areas = MutableStateFlow<List<OfflineArea>>(emptyList())
@@ -147,6 +167,7 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
         val unfinished = parts.firstOrNull { it.status?.isComplete != true }
         if (unfinished != null) {
             unfinished.error = null
+            unfinished.stall = null
             setActive(unfinished, true)
         } else if (parts.none { it.meta.dark }) {
             parts.firstOrNull()?.let { startDarkCompanion(it.meta) }
@@ -177,6 +198,7 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
             override fun onStatusChanged(status: OfflineRegionStatus) {
                 // MapLibre reports "complete" more than once; act on the first, or the dark copy starts twice.
                 val justCompleted = status.isComplete && t.status?.isComplete != true
+                if (status.isComplete || status.completedResourceCount > (t.status?.completedResourceCount ?: 0)) t.stall = null
                 t.status = status
                 when {
                     status.isComplete -> if (justCompleted) {
@@ -198,8 +220,10 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
             }
 
             override fun onError(error: OfflineRegionError) {
-                // Connection errors are retried by MapLibre; surface them so the user knows why it stalls.
-                t.error = error.message
+                // Connection errors are retried by MapLibre; surface them so the user knows why it stalls. Finished
+                // regions still report them (e.g. a style refresh offline), so ignore those.
+                if (t.status?.isComplete == true) return
+                t.stall = if (error.reason == OfflineRegionError.REASON_CONNECTION) "Waiting for a connection…" else error.message
                 publish()
             }
 
@@ -239,6 +263,7 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
         _areas.value = tracked.values.groupBy { it.meta.group }.map { (group, parts) ->
             val light = parts.firstOrNull { !it.meta.dark } ?: parts.first()
             val m = light.meta
+            val complete = parts.size >= 2 && parts.all { it.status?.isComplete == true }
             OfflineArea(
                 group = group,
                 name = m.name,
@@ -249,9 +274,9 @@ class OfflineRegions @Inject constructor(@param:ApplicationContext private val c
                 sharedBytes = light.status?.let { it.completedResourceSize - it.completedTileSize } ?: 0,
                 completedResources = parts.sumOf { it.status?.completedResourceCount ?: 0 },
                 requiredResources = parts.sumOf { it.status?.requiredResourceCount ?: 0 },
-                complete = parts.size >= 2 && parts.all { it.status?.isComplete == true },
+                complete = complete,
                 downloading = parts.any { it.active },
-                error = parts.firstNotNullOfOrNull { it.error },
+                error = if (complete) null else parts.firstNotNullOfOrNull { it.error ?: it.stall },
             )
         }.sortedByDescending { it.createdAt }
     }

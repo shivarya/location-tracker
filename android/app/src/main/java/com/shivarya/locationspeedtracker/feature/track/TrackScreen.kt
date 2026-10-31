@@ -77,12 +77,14 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shivarya.locationspeedtracker.core.location.LocationPermissions
 import com.shivarya.locationspeedtracker.core.model.ActivityType
+import com.shivarya.locationspeedtracker.core.flight.FlightSummary
 import com.shivarya.locationspeedtracker.core.tracking.Split
 import com.shivarya.locationspeedtracker.core.tracking.TrackingStatus
 import com.shivarya.locationspeedtracker.core.units.Format
 import com.shivarya.locationspeedtracker.core.units.UnitSystem
 import com.shivarya.locationspeedtracker.core.units.Units
 import com.shivarya.locationspeedtracker.core.units.fmt
+import com.shivarya.locationspeedtracker.core.units.grouped
 import com.shivarya.locationspeedtracker.feature.map.RouteStyle
 import com.shivarya.locationspeedtracker.feature.map.TrackMap
 import com.shivarya.locationspeedtracker.ui.components.ActivitySelector
@@ -393,7 +395,15 @@ private fun Stats(ui: TrackUi, columns: Int) {
     val s = ui.live.stats
     val a = ui.live.active
     val items = buildList {
-        if (a != null) {
+        val flight = ui.flight
+        if (a != null && flight != null) {
+            addAll(flightItems(flight, ui.now, units))
+            val d = Units.distance(s.distanceM, units)
+            add(StatItem("Distance", d.value.fmt(if (d.value < 100) 2 else 0), d.unit))
+            add(StatItem("Total time", Format.duration(a.elapsedMs(ui.now) / 1000.0)))
+            val max = Units.speed(s.maxSpeedMps, units)
+            add(StatItem("Max speed", max.value.fmt(0), max.unit))
+        } else if (a != null) {
             val d = Units.distance(s.distanceM, units)
             add(StatItem("Distance", d.value.fmt(if (d.value < 100) 2 else 1), d.unit))
             add(StatItem("Time", Format.duration(a.elapsedMs(ui.now) / 1000.0)))
@@ -407,7 +417,7 @@ private fun Stats(ui: TrackUi, columns: Int) {
             val max = Units.speed(s.maxSpeedMps, units)
             add(StatItem("Max speed", max.value.fmt(1), max.unit))
             val gain = Units.altitude(s.elevGainM, units)
-            add(StatItem("Climb", gain.value.fmt(0), gain.unit))
+            add(StatItem("Climb", gain.value.grouped(), gain.unit))
             ui.heartRate?.let { add(StatItem("Heart rate", it.toString(), "bpm")) }
             ui.calories?.takeIf { it >= 1 }?.let { add(StatItem("Calories", it.fmt(0), "kcal")) }
             ui.sensors?.let { sl ->
@@ -427,13 +437,24 @@ private fun Stats(ui: TrackUi, columns: Int) {
             }
         }
         val alt = ui.fix?.bestAltitude?.let { Units.altitude(it, units) }
-        add(StatItem("Altitude", alt?.value?.fmt(0) ?: "–", alt?.unit))
+        add(StatItem("Altitude", alt?.value?.grouped() ?: "–", alt?.unit))
         val bearing = ui.fix?.bearing?.takeIf { (ui.speedMps ?: 0.0) > 0.5 }
         add(StatItem("Heading", bearing?.let { "${Format.compass(it)} ${it.toInt()}°" } ?: "–"))
         val acc = ui.fix?.hAcc?.let { Units.shortDistance(it, units) }
         add(StatItem("Accuracy", acc?.let { "±${it.value.fmt(0)}" } ?: "–", acc?.unit))
     }
     StatGrid(items, columns = columns)
+}
+
+/** Live flight panel: phase, takeoff/landing clock times, time in the air, GNSS vertical speed. */
+internal fun flightItems(f: FlightSummary, now: Long, units: UnitSystem): List<StatItem> = buildList {
+    val clock = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
+    add(StatItem("Phase", f.phase.label))
+    add(StatItem("In the air", if (f.takeoffAt == null) "–" else Format.duration(f.airborneMsAt(now) / 1000.0)))
+    if (f.landingAt != null) add(StatItem("Landed", clock.format(java.util.Date(f.landingAt))))
+    else add(StatItem("Takeoff", f.takeoffAt?.let { clock.format(java.util.Date(it)) } ?: "–"))
+    val vs = f.verticalSpeedMps?.let { Units.verticalSpeed(it, units) }
+    add(StatItem("Vertical", vs?.let { (if (it.value > 0) "+" else "") + it.value.fmt(0) } ?: "–", vs?.unit))
 }
 
 @Composable

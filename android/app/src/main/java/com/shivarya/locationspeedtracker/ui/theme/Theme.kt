@@ -39,7 +39,8 @@ private val ClassicDark = darkColorScheme(
     surface = Color(0xFF1A252F),
     onSurface = Color(0xFFECF0F1),
     surfaceVariant = Color(0xFF34495E),
-    onSurfaceVariant = Color(0xFF95A5A6),
+    // Labels and units sit on surfaceContainer tiles: #95A5A6 there was ~4.3:1 and hard to read; this is ~6.5:1.
+    onSurfaceVariant = Color(0xFFB8C6CC),
     surfaceContainerLowest = Color(0xFF101A24),
     surfaceContainerLow = Color(0xFF223042),
     surfaceContainer = Color(0xFF2C3E50),

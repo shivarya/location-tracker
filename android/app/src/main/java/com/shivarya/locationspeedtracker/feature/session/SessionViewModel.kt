@@ -20,6 +20,8 @@ import com.shivarya.locationspeedtracker.core.export.shareCaption
 import com.shivarya.locationspeedtracker.core.model.ActivityType
 import com.shivarya.locationspeedtracker.core.settings.AppSettings
 import com.shivarya.locationspeedtracker.core.settings.SettingsRepository
+import com.shivarya.locationspeedtracker.core.tracking.Recalculation
+import com.shivarya.locationspeedtracker.core.tracking.SessionRecalculator
 import com.shivarya.locationspeedtracker.core.tracking.TrackSample
 import com.shivarya.locationspeedtracker.core.tracking.displayChunks
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +68,9 @@ data class ShareCardUi(
     val card: ShareCard? = null,
     val error: String? = null,
 )
+
+/** "Recalculate stats": the session as saved and what a replay of its points gives, shown before it's applied. */
+data class RecalcPreview(val before: SessionEntity, val result: Recalculation)
 
 sealed interface SessionEvent {
     data class Share(val intent: Intent) : SessionEvent
@@ -120,7 +125,9 @@ class SessionViewModel @Inject constructor(
             track.value = Loaded(pts, displayChunks(pts), metrics, done = true)
             // Heart rate can arrive later (Health Connect backfill): reload sensor rows when the session changes.
             sessions.observe(id).map { it?.updatedAt }.distinctUntilChanged().drop(1).collect {
-                track.value = track.value.copy(metrics = sessions.metrics(id))
+                val metrics = sessions.metrics(id)
+                // update, not value = copy(): a recalculation may have swapped the samples in meanwhile.
+                track.update { it.copy(metrics = metrics) }
             }
         }
     }
@@ -128,6 +135,29 @@ class SessionViewModel @Inject constructor(
     fun rename(name: String) = viewModelScope.launch { sessions.rename(id, name) }
     fun setNotes(notes: String) = viewModelScope.launch { sessions.setNotes(id, notes) }
     fun setActivity(a: ActivityType) = viewModelScope.launch { sessions.setActivity(id, a) }
+
+    private val _recalc = MutableStateFlow<RecalcPreview?>(null)
+    val recalc: StateFlow<RecalcPreview?> = _recalc
+
+    fun previewRecalculation() = viewModelScope.launch(Dispatchers.Default) {
+        val s = sessions.get(id) ?: return@launch
+        val r = SessionRecalculator.run(s, sessions.points(id), sessions.laps(id))
+        if (r == null) events.send(SessionEvent.Message("This session has no GPS points")) else _recalc.value = RecalcPreview(s, r)
+    }
+
+    fun dismissRecalculation() {
+        _recalc.value = null
+    }
+
+    fun applyRecalculation() = viewModelScope.launch(Dispatchers.Default) {
+        val p = _recalc.value ?: return@launch
+        _recalc.value = null
+        sessions.applyRecalculation(id, p.result)
+        // The points' speeds changed: redraw the route colours and charts.
+        val pts = sessions.points(id).map { it.toSample() }
+        track.update { it.copy(samples = pts, route = displayChunks(pts)) }
+        events.send(SessionEvent.Message("Stats recalculated"))
+    }
 
     /** Health Connect actions are only offered for activity types it has (not drives / motorbike rides). */
     val healthSupported: Boolean get() = ui.value.session?.let { health.exerciseType(ActivityType.from(it.activity)) != null } == true

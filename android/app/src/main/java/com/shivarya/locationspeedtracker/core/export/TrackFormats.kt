@@ -72,6 +72,8 @@ object TrackFormats {
         ActivityType.Cycle -> "cycling"
         ActivityType.Drive -> "driving"
         ActivityType.Motorbike -> "motorcycling"
+        ActivityType.Train -> "train"
+        ActivityType.Flight -> "flying"
         ActivityType.Other -> "other"
     }
 

@@ -92,6 +92,9 @@ interface LapDao {
 
     @Query("SELECT COALESCE(MAX(lapIndex) + 1, 0) FROM laps WHERE sessionId = :sessionId AND kind = :kind")
     suspend fun nextIndex(sessionId: String, kind: String): Int
+
+    @Query("DELETE FROM laps WHERE sessionId = :sessionId AND kind = :kind")
+    suspend fun deleteKind(sessionId: String, kind: String)
 }
 
 @Dao

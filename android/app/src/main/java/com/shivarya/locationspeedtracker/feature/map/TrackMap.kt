@@ -15,7 +15,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -100,9 +102,16 @@ fun TrackMap(
     highlight: TrackSample? = null,
     showEndpoints: Boolean = false,
     gesturesEnabled: Boolean = true,
+    northUpKey: Int = 0,
+    onBearingChange: (Float) -> Unit = {},
+    /** The maps' own compass; off where the caller draws a north-up control of its own. */
+    showCompass: Boolean = true,
 ) {
     if (!LocalMapEnvironment.current.useGoogle) {
-        MapLibreTrackMap(chunks, style, dark, modifier, current, follow, onUserPan, fitKey, highlight, showEndpoints, gesturesEnabled)
+        MapLibreTrackMap(
+            chunks, style, dark, modifier, current, follow, onUserPan, fitKey, highlight, showEndpoints, gesturesEnabled,
+            northUpKey, onBearingChange, showCompass,
+        )
         return
     }
     val context = LocalContext.current
@@ -122,6 +131,13 @@ fun TrackMap(
     }
     LaunchedEffect(camera.isMoving) {
         if (camera.isMoving && camera.cameraMoveStartedReason == CameraMoveStartedReason.GESTURE) onUserPan()
+    }
+    val bearingCallback by rememberUpdatedState(onBearingChange)
+    LaunchedEffect(camera) { snapshotFlow { camera.position.bearing }.collect { bearingCallback(it) } }
+    LaunchedEffect(northUpKey, loaded) {
+        if (northUpKey == 0 || !loaded) return@LaunchedEffect
+        val north = CameraPosition.Builder(camera.position).bearing(0f).tilt(0f).build()
+        runCatching { camera.animate(CameraUpdateFactory.newCameraPosition(north), 400) }
     }
     LaunchedEffect(fitKey, loaded) {
         if (fitKey == null || !loaded) return@LaunchedEffect
@@ -145,7 +161,7 @@ fun TrackMap(
             isBuildingEnabled = true,
         ),
         uiSettings = MapUiSettings(
-            compassEnabled = true,
+            compassEnabled = showCompass,
             myLocationButtonEnabled = false,
             zoomControlsEnabled = false,
             mapToolbarEnabled = false,

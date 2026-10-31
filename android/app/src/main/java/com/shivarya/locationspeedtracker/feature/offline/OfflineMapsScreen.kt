@@ -67,6 +67,7 @@ import com.shivarya.locationspeedtracker.core.geo.Bounds
 import com.shivarya.locationspeedtracker.core.geo.LatLon
 import com.shivarya.locationspeedtracker.core.maps.MapDetail
 import com.shivarya.locationspeedtracker.core.maps.MapLibreSetup
+import com.shivarya.locationspeedtracker.core.maps.StyleTweaks
 import com.shivarya.locationspeedtracker.core.maps.OfflineArea
 import com.shivarya.locationspeedtracker.core.maps.TileEstimator
 import com.shivarya.locationspeedtracker.feature.map.keepGesturesFromParent
@@ -304,7 +305,8 @@ private fun AreaPicker(start: LatLon?, flyTo: Bounds?, zoomSteps: SharedFlow<Dou
             m.uiSettings.isLogoEnabled = false
             m.uiSettings.isRotateGesturesEnabled = false
             m.moveCamera(CameraUpdateFactory.newLatLngZoom(start?.let { LatLng(it.lat, it.lon) } ?: LatLng(20.0, 78.0), if (start != null) 11.5 else 3.0))
-            m.setStyle(Style.Builder().fromUri(MapLibreSetup.STYLE_LIGHT))
+            // Same look as the downloaded area will have, so the picker shows what an Overview really holds.
+            m.setStyle(Style.Builder().fromUri(MapLibreSetup.STYLE_LIGHT)) { StyleTweaks.apply(it, dark = false) }
             m.addOnCameraIdleListener {
                 val w = mapView.width.toFloat()
                 val h = mapView.height.toFloat()

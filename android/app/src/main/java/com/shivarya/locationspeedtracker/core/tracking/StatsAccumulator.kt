@@ -83,10 +83,11 @@ class ElevationAccumulator(
 class StatsAccumulator(
     private val movingThresholdMps: Double,
     elevationThresholdM: Double = 4.0,
+    maxVerticalAccuracyM: Double = 25.0,
 ) {
     var stats = SessionStats(); private set
     private var lastSpeed: Double? = null
-    private val elevation = ElevationAccumulator(elevationThresholdM)
+    private val elevation = ElevationAccumulator(elevationThresholdM, maxVerticalAccuracyM)
     private var barometric = false
 
     fun restore(s: SessionStats) {

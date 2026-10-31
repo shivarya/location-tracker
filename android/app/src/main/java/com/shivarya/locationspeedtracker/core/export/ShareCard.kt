@@ -111,7 +111,7 @@ fun cardStats(s: SessionEntity, units: UnitSystem, showPace: Boolean): List<Stat
     Units.speed(s.stats.maxSpeedMps, units).let { add(StatTile("Max speed", it.value.fmt(1), it.unit)) }
     Units.altitude(s.stats.elevGainM, units).let { add(StatTile("Climb", it.value.fmt(0), it.unit)) }
     when {
-        s.calories != null && s.calories > 0 -> add(StatTile("Calories", s.calories.fmt(0), "kcal"))
+        s.calories != null && s.calories > 0 && ActivityType.from(s.activity).humanPowered -> add(StatTile("Calories", s.calories.fmt(0), "kcal"))
         s.avgHr != null -> add(StatTile("Avg heart rate", s.avgHr.toString(), "bpm"))
         s.steps != null && s.steps > 0 -> add(StatTile("Steps", "%,d".format(s.steps), ""))
     }

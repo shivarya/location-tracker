@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -74,12 +75,15 @@ import com.shivarya.locationspeedtracker.core.data.db.SessionSource
 import com.shivarya.locationspeedtracker.core.data.displayTitle
 import com.shivarya.locationspeedtracker.core.export.ExportFormat
 import com.shivarya.locationspeedtracker.core.model.ActivityType
+import com.shivarya.locationspeedtracker.core.flight.FlightLog
+import com.shivarya.locationspeedtracker.core.flight.FlightSummary
 import com.shivarya.locationspeedtracker.core.tracking.SplitKind
 import com.shivarya.locationspeedtracker.core.tracking.TrackSample
 import com.shivarya.locationspeedtracker.core.units.Format
 import com.shivarya.locationspeedtracker.core.units.UnitSystem
 import com.shivarya.locationspeedtracker.core.units.Units
 import com.shivarya.locationspeedtracker.core.units.fmt
+import com.shivarya.locationspeedtracker.core.units.grouped
 import com.shivarya.locationspeedtracker.feature.map.RouteColor
 import com.shivarya.locationspeedtracker.feature.map.RouteStyle
 import com.shivarya.locationspeedtracker.feature.map.TrackMap
@@ -100,6 +104,7 @@ import kotlinx.coroutines.launch
 fun SessionScreen(onBack: () -> Unit, vm: SessionViewModel = hiltViewModel()) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val shareCard by vm.shareCard.collectAsStateWithLifecycle()
+    val recalc by vm.recalc.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = LocalSnackbar.current
     val scope = rememberCoroutineScope()
@@ -148,6 +153,7 @@ fun SessionScreen(onBack: () -> Unit, vm: SessionViewModel = hiltViewModel()) {
                                 leadingIcon = { Icon(ActivityType.from(s?.activity).icon, null) },
                                 onClick = { menu = false; activityMenu = true },
                             )
+                            DropdownMenuItem(text = { Text("Recalculate stats") }, leadingIcon = { Icon(Icons.Filled.Refresh, null) }, onClick = { menu = false; vm.previewRecalculation() })
                             if (vm.healthSupported) {
                                 DropdownMenuItem(text = { Text("Save to Health Connect") }, leadingIcon = { Icon(Icons.Filled.HealthAndSafety, null) }, onClick = { menu = false; vm.syncToHealth() })
                             }
@@ -203,6 +209,7 @@ fun SessionScreen(onBack: () -> Unit, vm: SessionViewModel = hiltViewModel()) {
             confirmButton = { TextButton(onClick = { activityMenu = false }) { Text("Cancel") } },
         )
     }
+    recalc?.let { p -> RecalcDialog(p, ui.settings.unitSystem, onApply = vm::applyRecalculation, onDismiss = vm::dismissRecalculation) }
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
@@ -287,6 +294,10 @@ private fun Body(ui: SessionUi, s: SessionEntity, modifier: Modifier) {
                 }
             }
         }
+        if (activity == ActivityType.Flight) {
+            val flight = remember(samples) { FlightLog.of(samples) }
+            if (flight != null) SectionCard(title = "Flight") { StatGrid(flightSummaryItems(flight, units), columns = 3) }
+        }
         SectionCard(title = "Summary") { StatGrid(summaryItems(s, activity, units), columns = 3) }
         s.notes?.let { SectionCard(title = "Notes") { Text(it, style = MaterialTheme.typography.bodyMedium) } }
         if (samples.size >= 2) {
@@ -312,6 +323,23 @@ private fun nearestByTime(samples: List<TrackSample>, t: Long): Int {
     return lo
 }
 
+/** Takeoff to touchdown, rebuilt from the recorded points (works for sessions re-tagged as a flight later too). */
+private fun flightSummaryItems(f: FlightSummary, units: UnitSystem): List<StatItem> = buildList {
+    val clock = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
+    add(StatItem("Takeoff", f.takeoffAt?.let { clock.format(java.util.Date(it)) } ?: "–"))
+    add(StatItem("Landing", f.landingAt?.let { clock.format(java.util.Date(it)) } ?: "–"))
+    add(StatItem("In the air", if (f.takeoffAt == null) "–" else Format.duration(f.airborneMs / 1000.0)))
+    val flown = Units.distance(f.airborneDistanceM, units)
+    add(StatItem("Flown", flown.value.fmt(0), flown.unit))
+    val direct = Units.distance(f.directDistanceM, units)
+    add(StatItem("Direct", direct.value.fmt(0), direct.unit))
+    f.maxAltitudeM?.let { val a = Units.altitude(it, units); add(StatItem("Max altitude", a.value.grouped(), a.unit)) }
+    f.cruiseSpeedMps?.let { val v = Units.speed(it, units); add(StatItem("Cruise speed", v.value.fmt(0), v.unit)) }
+    val max = Units.speed(f.maxSpeedMps, units)
+    add(StatItem("Top speed", max.value.fmt(0), max.unit))
+    if (f.legs > 1) add(StatItem("Legs", f.legs.toString()))
+}
+
 private fun summaryItems(s: SessionEntity, activity: ActivityType, units: UnitSystem): List<StatItem> = buildList {
     val st = s.stats
     val d = Units.distance(st.distanceM, units)
@@ -329,16 +357,17 @@ private fun summaryItems(s: SessionEntity, activity: ActivityType, units: UnitSy
     }
     val gain = Units.altitude(st.elevGainM, units)
     val loss = Units.altitude(st.elevLossM, units)
-    add(StatItem("Climb", gain.value.fmt(0), gain.unit))
-    add(StatItem("Descent", loss.value.fmt(0), loss.unit))
-    st.maxAltM?.let { val a = Units.altitude(it, units); add(StatItem("Highest", a.value.fmt(0), a.unit)) }
-    st.minAltM?.let { val a = Units.altitude(it, units); add(StatItem("Lowest", a.value.fmt(0), a.unit)) }
+    add(StatItem("Climb", gain.value.grouped(), gain.unit))
+    add(StatItem("Descent", loss.value.grouped(), loss.unit))
+    st.maxAltM?.let { val a = Units.altitude(it, units); add(StatItem("Highest", a.value.grouped(), a.unit)) }
+    st.minAltM?.let { val a = Units.altitude(it, units); add(StatItem("Lowest", a.value.grouped(), a.unit)) }
     if (s.pausedS >= 1) add(StatItem("Paused", Format.duration(s.pausedS)))
     s.steps?.let { add(StatItem("Steps", "%,d".format(it))) }
     s.avgCadence?.let { add(StatItem("Cadence", it.fmt(0), "spm")) }
     s.avgHr?.let { add(StatItem("Avg HR", it.toString(), "bpm")) }
     s.maxHr?.let { add(StatItem("Max HR", it.toString(), "bpm")) }
-    s.calories?.let { add(StatItem("Calories", it.fmt(0), "kcal")) }
+    // Older builds estimated calories for General too; only muscle-powered sessions show them.
+    s.calories?.takeIf { activity.humanPowered }?.let { add(StatItem("Calories", it.fmt(0), "kcal")) }
     s.maxG?.let { add(StatItem("Peak G", it.fmt(2), "g")) }
     add(StatItem("GPS quality", "${st.qualityScore}%"))
 }
@@ -495,6 +524,37 @@ private fun TextDialog(title: String, initial: String, singleLine: Boolean, onDi
             )
         },
         confirmButton = { Button(onClick = { onSave(text); onDismiss() }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun RecalcDialog(p: RecalcPreview, units: UnitSystem, onApply: () -> Unit, onDismiss: () -> Unit) {
+    val old = p.before.stats
+    val new = p.result.stats
+    val rows = buildList {
+        val was = ActivityType.from(p.before.activity)
+        if (was != p.result.activity) add(Triple("Activity", was.label, p.result.activity.label))
+        add(Triple("Distance", Format.distance(old.distanceM, units), Format.distance(new.distanceM, units)))
+        add(Triple("Moving", Format.duration(old.movingS), Format.duration(new.movingS)))
+        add(Triple("Avg speed", Format.speed(old.avgMovingSpeedMps, units), Format.speed(new.avgMovingSpeedMps, units)))
+        add(Triple("Max speed", Format.speed(old.maxSpeedMps, units), Format.speed(new.maxSpeedMps, units)))
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Recalculate stats?") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Works the figures out again from the saved route with the current version's filter.")
+                rows.forEach { (label, before, after) ->
+                    Row {
+                        Text(label, Modifier.weight(0.9f), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if (before == after) after else "$before → $after", Modifier.weight(2f), fontWeight = if (before == after) null else FontWeight.SemiBold)
+                    }
+                }
+            }
+        },
+        confirmButton = { Button(onClick = onApply) { Text("Apply") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }

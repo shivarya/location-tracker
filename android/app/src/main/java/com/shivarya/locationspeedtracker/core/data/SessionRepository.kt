@@ -8,6 +8,8 @@ import com.shivarya.locationspeedtracker.core.data.db.SessionEntity
 import com.shivarya.locationspeedtracker.core.data.db.SessionState
 import com.shivarya.locationspeedtracker.core.data.db.TrackPointEntity
 import com.shivarya.locationspeedtracker.core.model.ActivityType
+import com.shivarya.locationspeedtracker.core.tracking.Recalculation
+import com.shivarya.locationspeedtracker.core.tracking.SplitKind
 import com.shivarya.locationspeedtracker.core.tracking.TrackSample
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -88,6 +90,15 @@ class SessionRepository @Inject constructor(private val db: AppDatabase) {
     suspend fun rename(id: String, name: String?) = edit(id) { it.copy(name = name?.trim()?.takeIf(String::isNotEmpty)) }
     suspend fun setNotes(id: String, notes: String?) = edit(id) { it.copy(notes = notes?.trim()?.takeIf(String::isNotEmpty)) }
     suspend fun setActivity(id: String, activity: ActivityType) = edit(id) { it.copy(activity = activity.stored) }
+
+    /** Saves a [Recalculation]: rewritten points, fresh auto splits, and the new figures on the session row. */
+    suspend fun applyRecalculation(id: String, r: Recalculation) = db.withTransaction {
+        val s = sessions.get(id) ?: return@withTransaction
+        points.insertAll(r.points)
+        laps.deleteKind(id, SplitKind.Auto.stored)
+        if (r.autoLaps.isNotEmpty()) laps.insertAll(r.autoLaps)
+        update(s.copy(activity = r.activity.stored, stats = r.stats, calories = r.calories))
+    }
 
     suspend fun softDelete(ids: List<String>) = sessions.softDelete(ids, System.currentTimeMillis())
     suspend fun restore(ids: List<String>) = sessions.restore(ids)

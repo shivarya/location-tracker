@@ -3,6 +3,7 @@ package com.shivarya.locationspeedtracker.core.sensors
 import android.hardware.Sensor
 import com.shivarya.locationspeedtracker.core.data.db.MetricEntity
 import com.shivarya.locationspeedtracker.core.data.db.SessionEntity
+import com.shivarya.locationspeedtracker.core.model.ActivityType
 import com.shivarya.locationspeedtracker.core.tracking.AddonContext
 import com.shivarya.locationspeedtracker.core.tracking.Fix
 import com.shivarya.locationspeedtracker.core.tracking.LiveState
@@ -52,6 +53,7 @@ class SensorRecorder @Inject constructor(private val hub: SensorHub) : SessionAd
     private var sessionId = ""
     private var stepsEnabled = false
     private var motionEnabled = false
+    private var baroEnabled = false
     private var paused = false
 
     private var headingDeg: Double? = null
@@ -89,7 +91,9 @@ class SensorRecorder @Inject constructor(private val hub: SensorHub) : SessionAd
         motionEnabled = !ctx.activity.onFoot
         stepsEnabled = ctx.activity.onFoot && hub.canCountSteps()
         hasDetector = hub.has(Sensor.TYPE_STEP_DETECTOR)
-        val set = SensorSet(motion = motionEnabled, pressure = hub.hasBarometer, steps = stepsEnabled, environment = false)
+        // A pressurised cabin sits at ~2 000 m whatever the aircraft does, so the barometer would be pure fiction.
+        baroEnabled = hub.hasBarometer && ctx.activity != ActivityType.Flight
+        val set = SensorSet(motion = motionEnabled, pressure = baroEnabled, steps = stepsEnabled, environment = false)
         if (!set.motion && !set.pressure && !set.steps) return@synchronized
         session = hub.open(set, SensorRate.Fast) { r, type, t -> onReading(r, type, t) }
         _live.value = SensorLive(steps = if (stepsEnabled) 0 else null)
@@ -160,8 +164,8 @@ class SensorRecorder @Inject constructor(private val hub: SensorHub) : SessionAd
                 peakG = peakG,
                 leanDeg = lean,
                 maxLeanDeg = maxLean,
-                baroAltM = baro.altitude,
-                verticalSpeedMps = baro.smoothed?.let { baro.verticalSpeed },
+                baroAltM = baro.altitude.takeIf { baroEnabled },
+                verticalSpeedMps = baro.smoothed?.takeIf { baroEnabled }?.let { baro.verticalSpeed },
                 steps = if (stepsEnabled) steps else null,
                 cadence = if (stepsEnabled) cadence.cadence(t) else null,
             )
@@ -187,8 +191,8 @@ class SensorRecorder @Inject constructor(private val hub: SensorHub) : SessionAd
             gLat = if (motionEnabled && n > 0) sumLat / n else null,
             gPeak = if (motionEnabled && n > 0) bucketPeak else null,
             pressureHpa = session?.readings?.pressureHpa,
-            baroAltM = baro.altitude,
-            verticalSpeedMps = baro.smoothed?.let { baro.verticalSpeed },
+            baroAltM = baro.altitude.takeIf { baroEnabled },
+            verticalSpeedMps = baro.smoothed?.takeIf { baroEnabled }?.let { baro.verticalSpeed },
             leanDeg = if (motionEnabled) lean else null,
             cadence = cad?.takeIf { it > 0 },
             stepsTotal = if (stepsEnabled) steps else null,
@@ -215,12 +219,13 @@ class SensorRecorder @Inject constructor(private val hub: SensorHub) : SessionAd
     }
 
     override fun altitudeOverride(): Double? = synchronized(lock) {
-        if (session != null && baro.calibrated) baro.altitude?.toDouble() else null
+        if (session != null && baroEnabled && baro.calibrated) baro.altitude?.toDouble() else null
     }
 
     override fun finish(session: SessionEntity): SessionEntity = synchronized(lock) {
         session.copy(
-            maxG = peakG.takeIf { motionEnabled && it > 0.01f }?.toDouble() ?: session.maxG,
+            // max(): a session switched to Flight mid-way already holds the peak from before the switch.
+            maxG = peakG.takeIf { motionEnabled && it > 0.01f }?.toDouble()?.let { maxOf(it, session.maxG ?: 0.0) } ?: session.maxG,
             steps = if (stepsEnabled) steps else session.steps,
             avgCadence = if (cadenceN > 0) cadenceSum / cadenceN else session.avgCadence,
         )

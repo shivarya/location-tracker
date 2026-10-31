@@ -25,7 +25,9 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.updateAll
 import androidx.glance.background
-import androidx.glance.color.ColorProvider
+import androidx.glance.LocalSize
+import androidx.glance.appwidget.SizeMode
+import androidx.glance.unit.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
@@ -83,6 +85,9 @@ object QuickAccess {
 // ---- Home-screen widget ------------------------------------------------------------------------------------------
 
 class SpeedWidget : GlanceAppWidget() {
+    // Exact: lay out for the size the user actually gave it (a 3×2 cell is only ~110 dp tall on many launchers).
+    override val sizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val d = deps(context)
         val live = d.engine().state.value
@@ -91,17 +96,21 @@ class SpeedWidget : GlanceAppWidget() {
     }
 }
 
+// Single fixed colours: the widget is always dark, and some launchers drew day/night pairs as dark-on-dark.
 private val WidgetBg = Color(0xFF1A252F)
-private val WidgetAccent = Color(0xFF00D4FF)
-private val WidgetText = Color(0xFFECF0F1)
-private val WidgetMuted = Color(0xFF95A5A6)
+private val WidgetAccent = ColorProvider(Color(0xFF00D4FF))
+private val WidgetText = ColorProvider(Color(0xFFF5F7F8))
+private val WidgetMuted = ColorProvider(Color(0xFFB4C2C9))
 
 @Composable
 private fun WidgetBody(context: Context, live: LiveState, units: UnitSystem, lastActivity: ActivityType) {
     val a = live.active
+    val size = LocalSize.current
+    val tall = size.height >= 150.dp
     val open = actionStartActivity(Intent(context, MainActivity::class.java).putExtra(EXTRA_OPEN, OPEN_TRACK))
     Column(
-        modifier = GlanceModifier.fillMaxSize().background(WidgetBg).cornerRadius(20.dp).padding(14.dp).clickable(open),
+        modifier = GlanceModifier.fillMaxSize().background(WidgetBg).cornerRadius(20.dp)
+            .padding(horizontal = 14.dp, vertical = if (tall) 12.dp else 8.dp).clickable(open),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -110,25 +119,34 @@ private fun WidgetBody(context: Context, live: LiveState, units: UnitSystem, las
                 a.paused -> "Paused · ${a.activity.label}"
                 else -> "● Recording · ${a.activity.label}"
             },
-            style = TextStyle(color = ColorProvider(WidgetMuted, WidgetMuted), fontSize = 12.sp),
+            style = TextStyle(color = WidgetMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium),
+            maxLines = 1,
         )
         if (a != null) {
             val speed = Units.speed((live.speedMps ?: 0.0).let { if (it < 0.3) 0.0 else it }, units)
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(speed.value.fmt(0), style = TextStyle(color = ColorProvider(WidgetAccent, WidgetAccent), fontSize = 34.sp, fontWeight = FontWeight.Bold))
-                Text(" ${speed.unit}", style = TextStyle(color = ColorProvider(WidgetText, WidgetText), fontSize = 13.sp))
+                Text(speed.value.fmt(0), style = TextStyle(color = WidgetAccent, fontSize = if (tall) 38.sp else 30.sp, fontWeight = FontWeight.Bold))
+                Text(" ${speed.unit}", style = TextStyle(color = WidgetText, fontSize = 14.sp, fontWeight = FontWeight.Medium))
             }
             Text(
                 "${Format.distance(live.stats.distanceM, units)} · ${Format.duration(a.elapsedMs(System.currentTimeMillis()) / 1000.0)}",
-                style = TextStyle(color = ColorProvider(WidgetText, WidgetText), fontSize = 13.sp),
+                style = TextStyle(color = WidgetText, fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                maxLines = 1,
             )
-            Spacer(GlanceModifier.height(6.dp))
-            Button(
-                text = "Stop",
-                onClick = actionStartService(Intent(context, TrackingService::class.java).setAction(TrackingService.ACTION_STOP)),
-            )
+            if (tall) {
+                Text(
+                    "max ${Format.speed(live.stats.maxSpeedMps, units)}",
+                    style = TextStyle(color = WidgetMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                    maxLines = 1,
+                )
+                Spacer(GlanceModifier.height(6.dp))
+                Button(
+                    text = "Stop",
+                    onClick = actionStartService(Intent(context, TrackingService::class.java).setAction(TrackingService.ACTION_STOP)),
+                )
+            }
         } else {
-            Text("Ready to track", style = TextStyle(color = ColorProvider(WidgetText, WidgetText), fontSize = 16.sp, fontWeight = FontWeight.Medium))
+            Text("Ready to track", style = TextStyle(color = WidgetText, fontSize = 16.sp, fontWeight = FontWeight.Medium))
             Spacer(GlanceModifier.height(6.dp))
             // A widget tap is one of the cases where Android lets a location foreground service start from the background.
             Button(

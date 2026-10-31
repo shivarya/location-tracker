@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalIconButton
@@ -24,12 +25,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -39,8 +43,13 @@ import com.shivarya.locationspeedtracker.core.settings.MapType
 import com.shivarya.locationspeedtracker.core.units.Format
 import com.shivarya.locationspeedtracker.core.units.Units
 import com.shivarya.locationspeedtracker.core.units.fmt
+import com.shivarya.locationspeedtracker.core.units.grouped
 import com.shivarya.locationspeedtracker.feature.settings.SettingsViewModel
+import com.shivarya.locationspeedtracker.feature.track.TrackUi
 import com.shivarya.locationspeedtracker.feature.track.TrackViewModel
+import com.shivarya.locationspeedtracker.feature.track.flightItems
+import com.shivarya.locationspeedtracker.ui.components.StatGrid
+import com.shivarya.locationspeedtracker.ui.components.StatItem
 import com.shivarya.locationspeedtracker.ui.theme.isAppInDarkTheme
 
 /** Full-screen live map (the Expo app's "Full Screen" modal, now pannable with a follow toggle). */
@@ -49,6 +58,8 @@ fun LiveMapScreen(onBack: () -> Unit, vm: TrackViewModel = hiltViewModel(), sett
     val ui by vm.ui.collectAsStateWithLifecycle()
     var follow by rememberSaveable { mutableStateOf(true) }
     var layersOpen by remember { mutableStateOf(false) }
+    var bearing by remember { mutableFloatStateOf(0f) }
+    var northUp by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) {
         vm.setVisible(true)
         onPauseOrDispose { vm.setVisible(false) }
@@ -64,11 +75,23 @@ fun LiveMapScreen(onBack: () -> Unit, vm: TrackViewModel = hiltViewModel(), sett
             follow = follow,
             onUserPan = { follow = false },
             modifier = Modifier.fillMaxSize(),
+            northUpKey = northUp,
+            onBearingChange = { bearing = it },
+            showCompass = false,
         )
         Column(Modifier.fillMaxSize().safeDrawingPadding().padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 FilledTonalIconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 Spacer(Modifier.weight(1f))
+                // The maps' own compasses sit under these buttons (or the status bar), so a rotated map gets this
+                // north-up control instead; the needle shows where north is.
+                val turned = ((bearing % 360f) + 360f) % 360f
+                val rotated = minOf(turned, 360f - turned) > 0.5f
+                if (rotated) {
+                    FilledTonalIconButton(onClick = { northUp++ }) {
+                        Icon(Icons.Filled.Navigation, contentDescription = "Turn the map north up", modifier = Modifier.rotate(-bearing))
+                    }
+                }
                 Box {
                     FilledTonalIconButton(onClick = { layersOpen = true }) { Icon(Icons.Filled.Layers, contentDescription = "Map type") }
                     DropdownMenu(expanded = layersOpen, onDismissRequest = { layersOpen = false }) {
@@ -85,31 +108,76 @@ fun LiveMapScreen(onBack: () -> Unit, vm: TrackViewModel = hiltViewModel(), sett
                 }
             }
             Spacer(Modifier.weight(1f))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f), tonalElevation = 4.dp) {
-                    Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                        val speed = Units.speed((ui.speedMps ?: 0.0).let { if (it < 0.3) 0.0 else it }, units)
-                        Readout(speed.value.fmt(0), speed.unit)
-                        if (ui.live.active != null) {
-                            val d = Units.distance(ui.live.stats.distanceM, units)
-                            Readout(d.value.fmt(2), d.unit)
-                            Readout(Format.duration((ui.live.active?.elapsedMs(ui.now) ?: 0) / 1000.0), "time")
+            if (!follow) {
+                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    Spacer(Modifier.weight(1f))
+                    SmallFloatingActionButton(onClick = { follow = true }) { Icon(Icons.Filled.MyLocation, contentDescription = "Follow my position") }
+                }
+            }
+            // Opaque panel: a translucent one let dark map tiles wash out the numbers.
+            Surface(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 6.dp,
+            ) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    val speed = Units.speed((ui.speedMps ?: 0.0).let { if (it < 0.3) 0.0 else it }, units)
+                    Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            speed.value.fmt(0),
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            " ${speed.unit}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 6.dp),
+                        )
+                        Spacer(Modifier.weight(1f))
+                        ui.live.active?.let { a ->
+                            Text(
+                                if (a.paused) "Paused · ${a.activity.label}" else a.activity.label,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                            )
                         }
                     }
-                }
-                Spacer(Modifier.weight(1f))
-                if (!follow) {
-                    SmallFloatingActionButton(onClick = { follow = true }) { Icon(Icons.Filled.MyLocation, contentDescription = "Follow my position") }
+                    StatGrid(liveMapItems(ui), columns = 3)
                 }
             }
         }
     }
 }
 
-@Composable
-private fun Readout(value: String, unit: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(unit, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+/** Everything the Track screen shows, in the same tiles; flights lead with phase / time aloft / vertical speed. */
+private fun liveMapItems(ui: TrackUi): List<StatItem> = buildList {
+    val units = ui.settings.unitSystem
+    val a = ui.live.active
+    val s = ui.live.stats
+    val flight = ui.flight
+    if (a != null && flight != null) addAll(flightItems(flight, ui.now, units))
+    if (a != null) {
+        val d = Units.distance(s.distanceM, units)
+        add(StatItem("Distance", d.value.fmt(if (d.value < 100) 2 else 0), d.unit))
+        add(StatItem("Time", Format.duration(a.elapsedMs(ui.now) / 1000.0)))
+        if (flight == null) {
+            val avg = Units.speed(s.avgMovingSpeedMps, units)
+            add(StatItem("Avg speed", avg.value.fmt(1), avg.unit))
+        }
+        val max = Units.speed(s.maxSpeedMps, units)
+        add(StatItem("Max speed", max.value.fmt(if (flight != null) 0 else 1), max.unit))
+    }
+    val alt = ui.fix?.bestAltitude?.let { Units.altitude(it, units) }
+    add(StatItem("Altitude", alt?.value?.grouped() ?: "–", alt?.unit))
+    val bearing = ui.fix?.bearing?.takeIf { (ui.speedMps ?: 0.0) > 0.5 }
+    add(StatItem("Heading", bearing?.let { "${Format.compass(it)} ${it.toInt()}°" } ?: "–"))
+    if (a == null) {
+        val acc = ui.fix?.hAcc?.let { Units.shortDistance(it, units) }
+        add(StatItem("Accuracy", acc?.let { "±${it.value.fmt(0)}" } ?: "–", acc?.unit))
     }
 }
+

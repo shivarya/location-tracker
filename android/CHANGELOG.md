@@ -4,6 +4,117 @@ Releases up to 1.0.9 were the Expo / React Native app (`../mobile/CHANGELOG.md`)
 rewrite, shipped as an in-place update of the same Play package (`com.shivarya.locationspeedtracker`, same upload
 key); previous sessions and the unit setting are imported on first launch.
 
+## [2.0.7] - 2026-10-31
+
+versionCode 21.
+
+### Added
+- **Recalculate stats** (session → ⋮): replays the saved route through the current filter and shows the before →
+  after figures before applying them. Repairs sessions recorded by an older, stricter filter — e.g. a flight
+  recorded as General on 2.0.4 (43 km → 1,739 km, max 395 → 925 km/h, moving 28 min → 2 h 27 min), which also
+  becomes a Flight with its takeoff/landing card. Re-anchored fixes saved at speed 0 get their speed back from the
+  neighbouring positions, auto splits are rebuilt (none for flights), calories are dropped where they don't apply,
+  and elevation stays as recorded.
+
+### Fixed
+- Session detail: a heart-rate reload racing another update could put back stale chart data.
+
+### Google Play Notes
+```
+SpeedTrack 2.0.7
+• New "Recalculate stats" in a session's menu: repairs trips recorded by older versions, such as a flight saved as General with the wrong distance and speeds
+```
+
+## [2.0.6] - 2026-10-31
+
+versionCode 20. Fixes found by replaying a real Bengaluru–Delhi flight that was recorded as "General" on 2.0.4.
+
+### Added
+- **Train** activity: up to 360 km/h (faster when Doppler confirms it), no auto-pause (stations and signal stops
+  are part of the journey), no calories or Health Connect entry, GPX type `train`.
+- **Automatic switch to Flight**: a session of any other type that holds an aircraft-only ground speed (≥ 450 km/h)
+  for 20 s becomes a Flight in place — GNSS source, no barometer, no auto-pause, the flight panel — keeping its
+  points, time and takeoff.
+- Full-screen map: a north-up button whenever the map is rotated (the maps' own compasses sat under the toolbar).
+- Picture-in-picture: elapsed time and altitude under the speed.
+
+### Fixed
+- Fast trips recorded as anything but Flight: above ~400 km/h every fix was dropped as a glitch and every 5th one
+  was taken back with speed 0, so the speedometer flicked between the real speed and 0, distance stopped (43 km
+  for a 1 740 km flight), and max/avg speed, moving time were wrong. A speed that both Doppler and the positions
+  agree on is now kept in vehicle activities, up to ~1 200 km/h; a re-anchored fix keeps its speed.
+- Flights: a stale or glitched pair of slow fixes mid-air no longer counts as a landing (the replay showed a phantom
+  second leg); a slow fix after a long dropout only lands the flight if the next one isn't fast again.
+- Altitude in flight: the fused provider blends in the barometer, which in a pressurised cabin read ~2 000 m on the
+  ground at the destination; flights (including auto-switched ones) read GNSS altitude. Altitude is formatted the
+  same way everywhere (12,346 m), and shows in the notification, full-screen map and picture-in-picture.
+- Calories only for walks, runs, hikes and rides — not drives, flights, trains or General.
+- No per-kilometre splits during a flight.
+- Offline maps: zooming from an Overview area into a Streets/Roads area now carries on as soon as the detailed area
+  covers the middle of the screen (it used to stop at the overview's level until the exact centre was inside it).
+- Dark map at country zoom (Overview areas, flights): rivers, lakes and the sea were drawn almost black on black
+  and main roads nearly invisible; they now stand out, with brighter town names. Rivers and main roads are bolder
+  at low zoom on the light map too.
+- Picture-in-picture text was dark-on-dark in the dark theme.
+
+### Google Play Notes
+```
+SpeedTrack 2.0.6
+• New Train mode
+• A flight recorded as another activity now switches to Flight mode by itself
+• Fixed speed flicking to 0, lost distance and wrong max speed above 400 km/h
+• Correct altitude after landing; altitude on every screen
+• Calories only for walks, runs, hikes and rides
+• Offline maps: zoom from an overview straight into a detailed area; clearer rivers and roads at night
+• North-up button on the full-screen map
+```
+
+## [2.0.5] - 2026-10-31
+
+versionCode 19.
+
+### Added
+- **Flight mode** — a "Flight" activity that records a whole flight, gate to gate, entirely offline (airplane mode):
+  - Accepts airliner ground speeds up to ~1 200 km/h. Every other activity treats anything above ~400 km/h as a GPS
+    glitch, so a flight recorded as a drive lost every cruise fix. 1 000 km/h gauge, no calories or Health Connect
+    entry.
+  - Reads the GNSS chip directly (no network assistance in airplane mode, and in-flight Wi-Fi can place the fused
+    provider at the ground station) and accepts the ±30–100 m fixes you get through a window.
+  - Barometer off: the cabin is pressurised to ~2 000 m whatever the aircraft does. Altitude and vertical speed come
+    from GNSS.
+  - No auto-pause: gate holds and stopovers stay in the recording.
+  - Live flight panel: phase (at the gate, taxiing, takeoff roll, climbing, cruising, descending, landed), takeoff
+    time, time in the air (keeps counting through GPS dropouts), vertical speed.
+  - Saved flights get a Flight card: takeoff and landing times, time in the air, distance flown, direct distance,
+    max altitude, cruise speed, max ground speed, legs. Rebuilt from the points, so re-tagging an old session as a
+    flight works too.
+  - GPX type `flying`; imported tracks with "fly"/"flight"/"plane" in their type map to it.
+- **Live metrics on the lock screen**: the recording notification now shows on the lock screen (it was on a
+  low-importance channel, which Android hides there by default; it moved to a silent default-importance channel,
+  `tracking_live`) with speed, distance and time, then max/avg speed and altitude, or, on a flight, the phase, time
+  in the air, altitude and vertical speed. On Android 16 it is also a Live Update with the speed in the status bar.
+- Full-screen live map: a solid panel with every metric (distance, time, avg/max speed, altitude, heading; the
+  flight panel during a flight) instead of three numbers on a see-through pill.
+
+### Fixed
+- Offline maps: a network blip during a download (e.g. "Unable to resolve host tiles.openfreemap.org") stayed on
+  the area in red even after it finished downloading. Connection errors now read "Waiting for a connection…" and
+  clear as soon as the download moves again; a finished area always shows "Ready offline".
+- Home-screen widget: the unit and distance were dark-on-dark on some launchers, and on a 2-row widget the header,
+  time and Stop button were cut off. Fixed colours, and the layout now fits the widget's actual size.
+- Dark theme: stat labels and units are brighter (~6.5:1 contrast instead of ~4.3:1); long values ("Descending",
+  "1,234.56") shrink to fit their tile instead of being clipped.
+
+### Google Play Notes
+```
+SpeedTrack 2.0.5
+• New Flight mode: records a whole flight offline in airplane mode: takeoff, climb, cruise, landing, time in the air, altitude and speeds up to 1,200 km/h
+• Live speed, distance, time and altitude on the lock screen
+• Full-screen map now shows every metric
+• Clearer stats and widget in dark mode
+• Offline maps no longer show a stale network error on a finished download
+```
+
 ## [2.0.4] - 2026-10-23
 
 versionCode 18.
