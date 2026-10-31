@@ -104,6 +104,7 @@ fun SettingsScreen(nav: SettingsNav, vm: SettingsViewModel = hiltViewModel()) {
                 SwitchRow("Automatic splits", "A split every ${if (s.unitSystem == UnitSystem.Metric) "kilometre" else "mile"}", s.autoSplits, vm::setAutoSplits)
                 SwitchRow("Auto-pause", "Pause when you stop moving, resume when you go", s.autoPause, vm::setAutoPause)
                 SwitchRow("Keep screen on while recording", null, s.keepScreenOn, vm::setKeepScreenOn)
+                SwitchRow("Name journeys after places", "e.g. “Bengaluru → Delhi flight”; names you type are kept", s.autoName, vm::setAutoName)
                 NavRow("GPS doctor", "Check signal, satellites and settings for the best fix", nav.openGps)
                 nav.openSensors?.let { NavRow("Sensors", "Live readings from every sensor on this phone", it) }
             }
@@ -139,14 +140,14 @@ fun SettingsScreen(nav: SettingsNav, vm: SettingsViewModel = hiltViewModel()) {
 
             SectionCard(title = "Data") {
                 Text(
-                    "${ui.sessionCount} saved session${if (ui.sessionCount == 1) "" else "s"}. Everything stays on this phone — " +
-                        "no account, no server.",
+                    "${ui.sessionCount} saved session${if (ui.sessionCount == 1) "" else "s"}. " +
+                        (ui.driveAccount?.let { "Synced to Google Drive ($it)." } ?: "Everything stays on this phone — no account, no server."),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 ui.legacyImported?.takeIf { it > 0 }?.let {
                     Text("$it imported from the previous version.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                nav.openBackup?.let { NavRow("Backup & restore", "Save everything to a file, or restore one", it) }
+                nav.openBackup?.let { NavRow("Backup & sync", "Google Drive sync, or save everything to a file", it) }
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = { confirmClear = true },

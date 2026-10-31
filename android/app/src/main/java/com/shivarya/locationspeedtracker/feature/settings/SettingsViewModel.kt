@@ -3,6 +3,7 @@ package com.shivarya.locationspeedtracker.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.shivarya.locationspeedtracker.core.data.SessionRepository
+import com.shivarya.locationspeedtracker.core.sync.JourneySync
 import com.shivarya.locationspeedtracker.core.settings.AppSettings
 import com.shivarya.locationspeedtracker.core.settings.LocationSourceMode
 import com.shivarya.locationspeedtracker.core.settings.MapEngine
@@ -26,15 +27,17 @@ data class SettingsUi(
     val settings: AppSettings = AppSettings(),
     val sessionCount: Int = 0,
     val legacyImported: Int? = null,
+    val driveAccount: String? = null,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repo: SettingsRepository,
     private val sessions: SessionRepository,
+    sync: JourneySync,
 ) : ViewModel() {
-    val ui: StateFlow<SettingsUi> = combine(repo.settings, sessions.finishedCount, repo.legacyImported) { s, n, legacy ->
-        SettingsUi(loaded = true, settings = s, sessionCount = n, legacyImported = legacy)
+    val ui: StateFlow<SettingsUi> = combine(repo.settings, sessions.finishedCount, repo.legacyImported, sync.state) { s, n, legacy, drive ->
+        SettingsUi(loaded = true, settings = s, sessionCount = n, legacyImported = legacy, driveAccount = drive.account)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUi())
 
     fun setUnits(v: UnitSystem) = viewModelScope.launch { repo.setUnitSystem(v) }
@@ -49,6 +52,7 @@ class SettingsViewModel @Inject constructor(
     fun setShowPace(v: Boolean) = viewModelScope.launch { repo.setShowPace(v) }
     fun setAutoSplits(v: Boolean) = viewModelScope.launch { repo.setAutoSplits(v) }
     fun setAutoPause(v: Boolean) = viewModelScope.launch { repo.setAutoPause(v) }
+    fun setAutoName(v: Boolean) = viewModelScope.launch { repo.setAutoName(v) }
     fun setProfile(v: Profile) = viewModelScope.launch { repo.setProfile(v) }
     fun setHealthSync(v: Boolean) = viewModelScope.launch { repo.setHealthConnectSync(v) }
     fun forgetHrDevice() = viewModelScope.launch { repo.setHrDevice(null, null) }

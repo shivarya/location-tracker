@@ -79,6 +79,8 @@ data class AppSettings(
     val perfDisclaimerAccepted: Boolean = false,
     /** A session's share image carries a QR code to the app and its message the Play links; the share sheet's switch. */
     val shareAppLinks: Boolean = true,
+    /** Unnamed journeys get "Start → End" place names once there's a network (Geocoder). Typed names are kept. */
+    val autoName: Boolean = true,
 )
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -119,6 +121,7 @@ class SettingsRepository @Inject constructor(
             perfRollout = p[Keys.PERF_ROLLOUT] ?: d.perfRollout,
             perfDisclaimerAccepted = p[Keys.PERF_DISCLAIMER] ?: d.perfDisclaimerAccepted,
             shareAppLinks = p[Keys.SHARE_APP_LINKS] ?: d.shareAppLinks,
+            autoName = p[Keys.AUTO_NAME] ?: d.autoName,
         )
     }
 
@@ -141,6 +144,7 @@ class SettingsRepository @Inject constructor(
     suspend fun setPerfRollout(v: Boolean) = store.edit { it[Keys.PERF_ROLLOUT] = v }
     suspend fun setPerfDisclaimerAccepted() = store.edit { it[Keys.PERF_DISCLAIMER] = true }
     suspend fun setShareAppLinks(v: Boolean) = store.edit { it[Keys.SHARE_APP_LINKS] = v }
+    suspend fun setAutoName(v: Boolean) = store.edit { it[Keys.AUTO_NAME] = v }
 
     suspend fun setProfile(p: Profile) = store.edit {
         it[Keys.WEIGHT] = p.weightKg
@@ -231,6 +235,7 @@ class SettingsRepository @Inject constructor(
         val PERF_ROLLOUT = booleanPreferencesKey("perf_rollout")
         val PERF_DISCLAIMER = booleanPreferencesKey("perf_disclaimer")
         val SHARE_APP_LINKS = booleanPreferencesKey("share_app_links")
+        val AUTO_NAME = booleanPreferencesKey("auto_name")
         val LEGACY_MIGRATED = booleanPreferencesKey("legacy_migrated")
         val LEGACY_ATTEMPTS = intPreferencesKey("legacy_attempts")
         val LEGACY_IMPORTED = intPreferencesKey("legacy_imported_sessions")

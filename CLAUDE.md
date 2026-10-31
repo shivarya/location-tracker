@@ -73,6 +73,21 @@ Play Console's highest code).
   speed/distanceM, the auto laps and the stats row). Stored speed ~0 between points ≥ 20 m/s apart = an old re-anchored
   fix, so it gets the derived speed back; airliner cruise → Flight; elevation is kept as recorded (may be barometric).
   This is how pre-2.0.6 sessions get repaired — a filter change never rewrites history by itself.
+- `core/sync/` (2.0.8) — **journey names + Google Drive sync**, one `JourneySyncWorker` (network required, KEEP +
+  re-check `pending()` at the end so its own renames don't restart it; 12 h periodic catch-up), triggered by
+  `JourneySyncTrigger` (started in `SpeedTrackApp`) on any change to finished sessions, the setting or the account.
+  `PlaceNamer` = platform Geocoder; `routeName()` is pure and unit-tested ("A → B flight" between towns, sub-localities
+  within one, "X run" for loops < 2 km; typed names are never replaced). `DriveAuth` = Identity
+  `AuthorizationClient`, scope `drive.appdata` only (no Google Sign-In, no Drive SDK); `DriveClient` = Drive v3 REST on
+  OkHttp. One `<sessionId>.json.gz` (ExportDocument with one session) per journey in `appDataFolder`, appProperties
+  `sessionId`/`updatedAt`. Local wins: changed sessions upload, ones deleted here (purged, not in the bin) are deleted
+  there, ones only in Drive are restored. Bookkeeping in `filesDir/journey_sync.json` (not DataStore, so a settings
+  backup never carries a Drive account).
+  **Cloud setup:** project `speedtrack-shivarya` (Drive API on), consent screen "SpeedTrack" with `drive.appdata`,
+  Android OAuth clients for the package with the debug, upload and Play app-signing SHA-1s (see the release skill's
+  Maps-key section for the values). No client id ships in the app — Play services matches package + signer, so a build
+  signed with any other key gets `DEVELOPER_ERROR` on Connect. Verify uploads with `files.list(spaces=appDataFolder)`;
+  they don't show in drive.google.com (Drive web → Settings → Manage apps shows the hidden data size).
 - `core/health/` — Health Connect write (idempotent `clientRecordId = "<session>/<kind>"`) and heart-rate backfill
   from watch apps (e.g. boAt via its companion app), `HealthSyncWorker` (now + again 3 h later).
 - `core/migration/` — **Expo import**: reads `RKStorage` (`catalystLocalStorage`) in 500 k-char `substr()` chunks

@@ -1,7 +1,7 @@
 # Privacy Policy for Location & Speed Tracker (SpeedTrack)
 
 **Effective Date**: October 18, 2026
-**Last Updated**: October 18, 2026 (version 2.0)
+**Last Updated**: October 31, 2026 (version 2.0.8 — Google Drive sync, journey names)
 
 ---
 
@@ -14,13 +14,14 @@ This Privacy Policy describes how Location & Speed Tracker ("SpeedTrack", "the a
 **Contact**: contact@shivarya.dev
 
 **In short:** SpeedTrack has no account and no server of its own. Everything it records stays on your phone unless you
-export it, back it up, or turn on Health Connect sync. It shows no ads and contains no analytics or tracking SDKs.
+export it, back it up, turn on Google Drive sync, or turn on Health Connect sync. It shows no ads and contains no analytics or tracking SDKs.
 
 ---
 
 ## Information the app uses
 
-All of the following is processed and stored **only on your device**.
+All of the following is processed and stored **on your device** — and, if you turn on Google Drive sync, in a private
+folder of your own Google Drive (see below).
 
 ### Location
 - GPS / GNSS position (latitude, longitude), altitude, speed, heading, accuracy and timestamps.
@@ -58,9 +59,23 @@ normal operation:
 | Offline maps & maps without Google | OpenFreeMap (tiles.openfreemap.org) | Standard web requests for map tiles of the area you view or download, with your IP address and an app identifier. No account or identifier of yours. |
 | Location accuracy | Google Play services (fused location provider) | When Google Location Accuracy is on in your phone's settings, Google uses Wi-Fi, Bluetooth and mobile-network signals to improve location — this is a phone setting governed by Google. |
 | Naming offline map areas | Android's Geocoder | The centre point of an area you are about to download, to suggest a place name. |
+| Naming journeys (on by default, can be turned off in Settings) | Android's Geocoder (Google Play services) | The start and end points of a finished journey you haven't named, to name it after places ("Bengaluru → Delhi flight"). Only the two points, no route or other data. |
+| Google Drive sync (optional, off until you connect) | Google Drive, in your own Google account | Each finished journey — route, statistics, laps, sensor and heart-rate readings — is stored in Drive's hidden app-data folder of the account you connect, so it survives a lost phone and can be restored on a new one. Only SpeedTrack can open that folder; SpeedTrack can't see your other Drive files. Nobody else, including the developer, has access. |
 | Health Connect (optional, off by default) | Health Connect, on your device | Finished workouts (exercise session with route, distance, steps, calories, elevation, speed, heart rate) are written to Health Connect; heart rate recorded by other apps during your sessions is read from it. Health Connect is an Android component on your phone — data you share there is then available to other apps *you* allow. |
 | Backups | Android Backup (your Google account), or a file you save | Android may back up the app's data to your Google account (encrypted, managed by Google). In-app backups are files saved wherever you choose. |
 | Export / share | Apps you choose | Files (GPX, TCX, KML, CSV, JSON) you explicitly export or share. |
+
+---
+
+## Google Drive sync
+
+Google Drive sync is off until you connect an account in Settings → Backup & sync. SpeedTrack then asks Google only
+for the `drive.appdata` permission: access to a hidden folder in your Drive that belongs to SpeedTrack, and nothing
+else. Journeys you record, edit or delete are uploaded, updated or deleted there; journeys found there on a new phone
+are restored. The developer runs no server and never receives this data. To stop: Settings → Backup & sync →
+Disconnect (journeys already uploaded stay in your Drive). To delete them, remove SpeedTrack's hidden app data in Google
+Drive on the web (Settings → Manage apps → SpeedTrack → Delete hidden app data), or disconnect SpeedTrack under your
+Google Account → Security → Third-party apps.
 
 ---
 
@@ -87,15 +102,18 @@ Use requirements.
 | Physical activity (optional) | Steps, cadence and activity detection |
 | Nearby devices / Bluetooth (optional) | Find and connect a Bluetooth heart-rate sensor — never used to infer location |
 | Health Connect (optional) | Write workouts, read heart rate |
-| Network / Wi-Fi state | Download maps; the GPS doctor checks whether Wi-Fi scanning is on |
+| Network / Wi-Fi state | Download maps, sync to Google Drive; the GPS doctor checks whether Wi-Fi scanning is on |
+| Google account, Drive app-data access (optional) | Google Drive sync — granted on Google's consent screen when you connect |
 
 ---
 
 ## Storage, retention and deletion
 
-- Sessions and settings are stored in the app's private storage on your device.
+- Sessions and settings are stored in the app's private storage on your device, and — with Google Drive sync on — in
+  your Drive's SpeedTrack app folder.
 - Data stays until you delete it: delete a session (with undo), delete all sessions in Settings, or uninstall the app.
-  Data you exported, backed up or wrote to Health Connect is managed where you put it.
+  Deleting a session also deletes its Drive copy while sync is connected. Data you exported, backed up or wrote to
+  Health Connect is managed where you put it.
 
 ---
 

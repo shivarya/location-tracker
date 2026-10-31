@@ -4,6 +4,33 @@ Releases up to 1.0.9 were the Expo / React Native app (`../mobile/CHANGELOG.md`)
 rewrite, shipped as an in-place update of the same Play package (`com.shivarya.locationspeedtracker`, same upload
 key); previous sessions and the unit setting are imported on first launch.
 
+## [2.0.8] - unreleased
+
+versionCode 22.
+
+### Added
+- **Google Drive sync** (Settings → Backup & sync → Connect Google Drive): each finished journey is kept in the
+  hidden app-data folder of your Drive (`drive.appdata` scope only — SpeedTrack can't see other files, and the
+  folder doesn't show in Drive's file list), one gzipped SpeedTrack JSON per journey. New, renamed and recalculated
+  journeys upload once online; deleting one deletes its Drive copy; on a new phone or a reinstall, connecting
+  restores the journeys found there. Google's Authorization API + Drive REST on the app's OkHttp (no Drive SDK), a
+  WorkManager job (network required, retries with backoff, twice-daily catch-up). Disconnect revokes access and keeps
+  what's in Drive.
+- **Journey names from places**: unnamed journeys are named after where they went once there's a network —
+  "Bengaluru → Delhi flight" between towns, "Indiranagar → Koramangala drive" across one, "Indiranagar run" for a
+  loop. Applies to past journeys too; a name you typed is never replaced. Settings → "Name journeys after places".
+
+### Changed
+- Settings → "Backup & restore" is now "Backup & sync"; the Data card says when journeys sync to Drive.
+- Privacy policy: Drive sync and journey naming.
+
+### Google Play Notes
+```
+SpeedTrack 2.0.8
+• Google Drive sync: keep every journey in a private folder of your Drive and get them back on a new phone (Settings → Backup & sync)
+• Journeys are named after where they went, e.g. "Bengaluru → Delhi flight"
+```
+
 ## [2.0.7] - 2026-10-31
 
 versionCode 21.
